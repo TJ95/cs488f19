@@ -32,6 +32,11 @@ protected:
 private:
 	void initGrid();
 
+	// student edits
+	void initFloor();
+	void initAvatar();
+	void initCube();
+
 	// Fields related to the shader and uniforms.
 	ShaderProgram m_shader;
 	GLint P_uni; // Uniform location for Projection matrix.

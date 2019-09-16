@@ -136,6 +136,15 @@ void A1::initGrid()
 	CHECK_GL_ERRORS;
 }
 
+void A1::initFloor()
+{
+
+}
+
+void A1::initAvatar()
+{
+
+}
 //----------------------------------------------------------------------------------------
 /*
  * Called once per frame, before guiLogic().
@@ -324,6 +333,15 @@ bool A1::keyInputEvent(int key, int action, int mods) {
 	// Fill in with event handling code...
 	if( action == GLFW_PRESS ) {
 		// Respond to some key events.
+		if (key == 'Q')
+		{
+			cout << "Q key pressed, shutting down..." << endl;
+
+			//quit application
+			glfwSetWindowShouldClose(m_window, GL_TRUE);
+
+			eventHandled = true;
+		}
 	}
 
 	return eventHandled;
