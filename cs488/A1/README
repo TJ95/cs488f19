@@ -1,0 +1,10 @@
+CS488 - Fall 2019 Assignment 1
+Tianjun Zhang, 20643273, t269zhan@uwaterloo.ca
+
+Compilation:
+	- no changes to the default premake/make
+	- tested on lab computer gl34
+
+Manual:
+	- did not implement the spherical avatar, the current avatar is a slightly smaller cube
+	- completed everything else

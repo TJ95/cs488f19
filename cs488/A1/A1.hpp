@@ -29,12 +29,18 @@ protected:
 	virtual bool windowResizeEvent(int width, int height) override;
 	virtual bool keyInputEvent(int key, int action, int mods) override;
 
-private:
-	void initGrid();
+	// additions
+	virtual void dig();
+	virtual void wall_edit(int i);
+	virtual void teleport(float x, float y, float z);
+	virtual void translate_avatar(int d);
+	virtual void reset();
 
-	// student edits
+	private : void initGrid();
+
+	// additions
 	void initFloor();
-	void initAvatar();
+	void initAvatar(float x, float y, float z);
 	void initCube();
 
 	// Fields related to the shader and uniforms.
@@ -48,10 +54,57 @@ private:
 	GLuint m_grid_vao; // Vertex Array Object
 	GLuint m_grid_vbo; // Vertex Buffer Object
 
+	// Fields related to floor geometry.
+	GLuint m_floor_vao; // Vertex Array Object
+	GLuint m_floor_vbo; // Vertex Buffer Object
+	GLuint m_floor_ebo;
+	glm::vec3 m_floor_color;
+
+	// Fields related to cube geometry.
+	GLuint m_cube_vao;
+	GLuint m_cube_vbo;
+	GLuint m_cube_ebo;
+	glm::vec3 m_cube_color;
+
+	// Fields related to avatar geometry.
+	GLuint m_avatar_vao; // Vertex Array Object
+	GLuint m_avatar_vbo; // Vertex Buffer Object
+	GLuint m_avatar_ebo;
+	glm::vec3 m_avatar_color;
+
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
 	glm::mat4 view;
 
+	//stuff
 	float colour[3];
 	int current_col;
+	float element_colors[3][3];
+	int floor_color_index = 0;
+	int cube_color_index = 1;
+    int avatar_color_index = 2;
+
+	// World rotation angle in radians.
+    float m_world_rotation;
+ 
+    // World scaling factor
+    float m_world_size;
+
+	// avatar
+	float ava[24];
+	// array that contains the vertex order for faces of a cube
+	unsigned int inds[36] = {
+		0, 1, 3, //
+		1, 2, 3, // Bottom face
+		1, 2, 5,
+		6, 2, 5, // Front
+		2, 3, 6,
+		3, 6, 7, // Right
+		0, 1, 5,
+		0, 4, 5, // Left
+		3, 4, 7,
+		0, 3, 4, // Back
+		4, 5, 6,
+		4, 6, 7 // Top
+	};
 };
