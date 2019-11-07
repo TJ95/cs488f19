@@ -1,7 +1,6 @@
 // Fall 2019
 
 #include "GeometryNode.hpp"
-#include "SceneNode.hpp"
 
 using namespace glm;
 
@@ -57,34 +56,18 @@ void GeometryNode::updateShaderUniforms(
 		modelView = viewMatrix * modelView;
 		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
 		CHECK_GL_ERRORS;
+		
+		//-- Set NormMatrix:
+		location = shader.getUniformLocation("NormalMatrix");
+		mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
+		glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
+		CHECK_GL_ERRORS;
 
-		if (do_picking) {
-			float r = float(m_nodeId & 0xff) / 255.0f;
-			float g = float((m_nodeId >> 8) & 0xff) / 255.0f;
-			float b = float((m_nodeId >> 16) & 0xff) / 255.0f;
-
-			location = shader.getUniformLocation("material.kd");
-			glUniform3f(location, r, g, b);
-			CHECK_GL_ERRORS;
-		} else {
-			//-- Set NormMatrix:
-			location = shader.getUniformLocation("NormalMatrix");
-			mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
-			glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
-			CHECK_GL_ERRORS;
-
-			//-- Set Material values:
-			location = shader.getUniformLocation("material.kd");
-			vec3 kd;
-			if (!isSelected)
-			{
-				kd = this->material.kd;
-			} else {
-				kd = {1, 1, 0};
-			}
-			glUniform3fv(location, 1, value_ptr(kd));
-			CHECK_GL_ERRORS;
-		}
+		//-- Set Material values:
+		location = shader.getUniformLocation("material.kd");
+		vec3 kd = this->material.kd;
+		glUniform3fv(location, 1, value_ptr(kd));
+		CHECK_GL_ERRORS;
 	}
 	shader.disable();
 }

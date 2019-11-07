@@ -26,10 +26,4 @@ public:
 
 
 	JointRange m_joint_x, m_joint_y;
-
-	// additions
-	void rotate(char axis, float angle);
-	char get_rot_axis();
-	void update_transformation();
-	
 };

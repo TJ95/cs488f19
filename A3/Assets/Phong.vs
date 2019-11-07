@@ -17,40 +17,12 @@ uniform mat4 Perspective;
 // transformed using this matrix instead of the ModelView matrix.
 uniform mat3 NormalMatrix;
 
-// struct Material {
-//     vec3 kd;
-// };
-// uniform Material material;
-
-//Ambient light intensity for each RGB component.
-// uniform vec3 ambientIntensity;
-
-//out vec3 vcolour;
 out VsOutFsIn {
 	vec3 position_ES; // Eye-space position
 	vec3 normal_ES;   // Eye-space normal
 	LightSource light;
 } vs_out;
 
-// vec3 diffuseLighting(vec3 vertPosition, vec3 vertNormal) {
-//     // Direction from vertex to light source.
-//     vec3 l = normalize(light.position - vertPosition);
-
-//     float n_dot_l = max(dot(vertNormal, l), 0.0);
-
-//     vec3 diffuse;
-//     diffuse = material.kd * n_dot_l;
-
-//     return ambientIntensity*material.kd + light.rgbIntensity*diffuse;
-// }
-
-// void main() {
-// 	vec4 pos4 = vec4(position, 1.0);
-
-// 	//vcolour = diffuseLighting((ModelView * pos4).xyz, normalize(NormalMatrix * normal));
-	
-// 	gl_Position = Perspective * ModelView * pos4;
-// }
 
 void main() {
 	vec4 pos4 = vec4(position, 1.0);
@@ -63,4 +35,3 @@ void main() {
 
 	gl_Position = Perspective * ModelView * vec4(position, 1.0);
 }
-

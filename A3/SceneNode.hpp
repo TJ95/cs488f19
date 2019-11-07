@@ -63,26 +63,15 @@ public:
 	NodeType m_nodeType;
 	std::string m_name;
 	unsigned int m_nodeId;
-    // additions:
-    SceneNode *parent;
-    unsigned int node_id;
+
 
 private:
 	// The number of SceneNode instances.
 	static unsigned int nodeInstanceCount;
-    // additions:
-    // static map to store all nodes
-    static std::unordered_map<int, SceneNode *> node_bank;
-    // indicator that Joint Mode is active
-
-    
-
 protected:
     glm::mat4 translation;
     glm::mat4 rotation;
     glm::mat4 scaling;
-    static bool do_picking;
-
 public:
     // Rendering the mesh
     virtual void render(
@@ -95,8 +84,4 @@ public:
         const ShaderProgram &shader,
         const glm::mat4 &viewMatrix,
         std::deque<glm::mat4> &stack) const;
-
-    void picking_switch(int cmd) const;
-    SceneNode *get_node(int i) const;
-    bool node_exist(int id) const;
 };

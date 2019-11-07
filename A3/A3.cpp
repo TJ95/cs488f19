@@ -53,7 +53,6 @@ void A3::init()
 	glClearColor(0.55, 0.55, 0.55, 1.0);
 
 	// set booleans
-	do_picking = false;
 	display_circle = false;
 	z_buffer_active = true;
 	bf_cull = false;
@@ -280,27 +279,22 @@ void A3::uploadCommonSceneUniforms() {
 		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
 		CHECK_GL_ERRORS;
 
-		location = m_shader.getUniformLocation("picking");
-		glUniform1i(location, do_picking ? 1 : 0);
 
 		//-- Set LightSource uniform for the scene:
-		if (!do_picking) {
-			//-- Set LightSource uniform for the scene:
-			{
-				location = m_shader.getUniformLocation("light.position");
-				glUniform3fv(location, 1, value_ptr(m_light.position));
-				location = m_shader.getUniformLocation("light.rgbIntensity");
-				glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
-				CHECK_GL_ERRORS;
-			}
+		{
+			location = m_shader.getUniformLocation("light.position");
+			glUniform3fv(location, 1, value_ptr(m_light.position));
+			location = m_shader.getUniformLocation("light.rgbIntensity");
+			glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
+			CHECK_GL_ERRORS;
+		}
 
-			//-- Set background light ambient intensity
-			{
-				location = m_shader.getUniformLocation("ambientIntensity");
-				vec3 ambientIntensity(0.05f);
-				glUniform3fv(location, 1, value_ptr(ambientIntensity));
-				CHECK_GL_ERRORS;
-			}
+		//-- Set background light ambient intensity
+		{
+			location = m_shader.getUniformLocation("ambientIntensity");
+			vec3 ambientIntensity(0.25f);
+			glUniform3fv(location, 1, value_ptr(ambientIntensity));
+			CHECK_GL_ERRORS;
 		}
 	}
 	m_shader.disable();
@@ -485,6 +479,25 @@ void A3::renderSceneGraph(const SceneNode & root) {
 	// could put a set of mutually recursive functions in this class, which
 	// walk down the tree from nodes of different types.
 
+	// for (const SceneNode * node : root.children) {
+
+	// 	if (node->m_nodeType != NodeType::GeometryNode)
+	// 		continue;
+
+	// 	const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
+
+	// 	updateShaderUniforms(m_shader, *geometryNode, m_view);
+
+
+	// 	// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
+	// 	BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
+
+	// 	//-- Now render the mesh:
+	// 	m_shader.enable();
+	// 	glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
+	// 	m_shader.disable();
+	// }
+
 	// retrive transformation from root node
 	deque<glm::mat4> t_stack;
 	glm::mat4 prev_state = root.get_transform();
@@ -581,15 +594,6 @@ bool A3::mouseMoveEvent (
 				rotation = glm::rotate(rotation, glm::degrees(angle), {axis_world.x, axis_world.y, axis_world.z});
 			}
 		}
-	} else if (imode == 1) { // joint mode
-		if (ImGui::IsMouseDown(2)) {
-			float angle = diff_x*2;
-
-			for (auto joint : active_nodes) {
-				//cout << joint->m_nodeId << endl;
-				joint->rotate('x',angle);
-			}
-		}
 	}
 
 	prev_x = xPos;
@@ -609,76 +613,6 @@ bool A3::mouseButtonInputEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
-	if (imode == 1) {
-		if (button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_PRESS)
-		{
-			double xpos, ypos;
-			glfwGetCursorPos(m_window, &xpos, &ypos);
-			do_picking = true;
-			m_rootNode->picking_switch(0);
-
-			uploadCommonSceneUniforms();
-			glClearColor(1.0, 1.0, 1.0, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glClearColor(0.55, 0.55, 0.55, 1.0);
-
-			draw();
-
-			// I don't know if these are really necessary anymore.
-			// glFlush();
-			// glFinish();
-
-			CHECK_GL_ERRORS;
-
-			// Ugly -- FB coordinates might be different than Window coordinates
-			// (e.g., on a retina display).  Must compensate.
-			xpos *= double(m_framebufferWidth) / double(m_windowWidth);
-			// WTF, don't know why I have to measure y relative to the bottom of
-			// the window in this case.
-			ypos = m_windowHeight - ypos;
-			ypos *= double(m_framebufferHeight) / double(m_windowHeight);
-
-			GLubyte buffer[4] = {0, 0, 0, 0};
-			// A bit ugly -- don't want to swap the just-drawn false colours
-			// to the screen, so read from the back buffer.
-			glReadBuffer(GL_BACK);
-			// Actually read the pixel at the mouse location.
-			glReadPixels(int(xpos), int(ypos), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-			CHECK_GL_ERRORS;
-
-			// Reassemble the object ID.
-			unsigned int what = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16);
-			//cout << what << endl;
-			if (m_rootNode->node_exist(what)) {
-				auto * node = m_rootNode->get_node(what);
-				node->isSelected = !node->isSelected;
-				if (what == 20) {
-						m_rootNode->get_node(21)->isSelected = node->isSelected;
-				}
-				if (what == 21) {
-						m_rootNode->get_node(20)->isSelected = node->isSelected;
-				}
-				if (what == 1) {
-					node->isSelected = false;
-				}
-				if (node->parent->m_nodeType == NodeType::JointNode) {
-					auto * joint = (JointNode *)node->parent;
-					if (node->isSelected) {
-						active_nodes.insert(joint);
-					} else {
-						active_nodes.erase(joint);
-					}
-				}
-			}
-
-			do_picking = false;
-			m_rootNode->picking_switch(1);
-
-			CHECK_GL_ERRORS;
-
-		}
-
-	}
 
 	return eventHandled;
 }
@@ -778,11 +712,6 @@ bool A3::keyInputEvent (
 			ff_cull = !ff_cull;
 			eventHandled = true;
 		}
-		if (key == 'J')
-		{
-			imode = 1;
-			eventHandled = true;
-		}
 	}
 	// Fill in with event handling code...
 
@@ -812,10 +741,6 @@ vec3 A3::get_arcball_vector(float x, float y) {
 void A3::resetAll() {
 	translation = mat4();
 	rotation = mat4();
-	for (auto joint : active_nodes) {
-		joint->xangle = 0;
-		joint->yangle = 0;
-	}
 }
 
 void A3::resetPosition() {

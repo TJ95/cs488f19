@@ -27,7 +27,6 @@ public:
 	GLsizei numVertices;
 };
 
-
 class A2 : public CS488Window {
 public:
 	A2();
@@ -61,6 +60,18 @@ protected:
 			const glm::vec2 & v0,
 			const glm::vec2 & v1
 	);
+	//additions
+	void vp_drawLine(const glm::vec2 &V0, const glm::vec2 &V1);
+	void initCube();
+	void initGnoms();
+	bool Clipper(glm::vec4 &p1, glm::vec4 &p2);
+	// compute the t-matrices for the 3 types of transformations
+	glm::mat4 m_trans(const glm::vec3 &t);
+	glm::mat4 m_rotate(const glm::vec3 &t);
+	glm::mat4 m_scale(const glm::vec3 &t);
+	void reset();
+	void vp_load(glm::vec2 v0, glm::vec2 v1);
+
 
 	ShaderProgram m_shader;
 
@@ -72,4 +83,41 @@ protected:
 
 	glm::vec3 m_currentLineColour;
 
+	// additions
+	std::vector<glm::vec4> cube_verts;
+	std::vector<std::pair<glm::vec4, glm::vec4>> cube_edges;
+	std::vector<std::pair<glm::vec4, glm::vec4>> gnom_w;
+	std::vector<std::pair<glm::vec4, glm::vec4>> gnom_m;
+
+	float near;
+	float far;
+	float fov;
+	float prev_x;
+	float prev_y;
+	glm::mat4 M_mat;
+	glm::mat4 V_mat;
+	glm::mat4 P_mat;
+	glm::mat4 scale_record = glm::mat4();
+	// 0-6 correspond to the 7 interaction modes
+	int imode;
+	// viewport (4 corner vertices)
+	std::vector<glm::vec2> vp_verts;
+	glm::vec2 vp_A;
+	glm::vec2 vp_B;
+	glm::vec2 offset_vp;
+	float vp_w;
+	float vp_h;
+	float vp_w_old;
+	float vp_h_old;
+	bool porting = false;
+
+	// Clippers
+	static float cleft(const glm::vec4 p);
+	static float cright(const glm::vec4 p);
+	static float cbot(const glm::vec4 p);
+	static float ctop(const glm::vec4 p);
+	static float cnear(const glm::vec4 p);
+	static float cfar(const glm::vec4 p);
+	bool clipline(glm::vec4 &v1, glm::vec4 &v2);
+	
 };

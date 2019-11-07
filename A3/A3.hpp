@@ -8,12 +8,9 @@
 #include "cs488-framework/MeshConsolidator.hpp"
 
 #include "SceneNode.hpp"
-#include "JointNode.hpp"
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <deque>
-#include <unordered_set>
 
 struct LightSource {
 	glm::vec3 position;
@@ -91,12 +88,11 @@ private:
 	void culling();
 	glm::mat4 translation;
 	glm::mat4 rotation;
-	bool display_circle = false;
-	bool z_buffer_active = true;
-	bool bf_cull = false;
-	bool ff_cull = false;
-	bool do_picking = false;
+	bool display_circle;
+	bool z_buffer_active;
+	bool bf_cull;
+	bool ff_cull;
 	int imode;
 	double prev_x, prev_y;
-	std::unordered_set<JointNode *> active_nodes;
+	
 };

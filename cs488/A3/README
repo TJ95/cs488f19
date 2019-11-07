@@ -1,0 +1,19 @@
+CS488 - Fall 2019 Assignment 3
+Tianjun Zhang, 20643273, t269zhan@uwaterloo.ca
+
+Compilation:
+	- no changes to the default premake/make commands
+	- tested on lab computer gl34
+
+Manual:
+	- no undo/redo
+	- joint reset not available
+	- joint rotation cap not available
+	- completed everything else
+
+Puppet/program Overview:
+	- Generic humanoid puppet that has a smaller sphere as its nose (indicating the face direction)
+	- same hierarchy as the example in the assignment description (torso as first node, shoulder&hips as first level, etc)
+	- Arc Circle off by default
+	- Z-Buffer on by default
+	- Culling off by default

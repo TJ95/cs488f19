@@ -1,7 +1,5 @@
 #version 330
 
-uniform bool picking;
-
 struct LightSource {
     vec3 position;
     vec3 rgbIntensity;
@@ -12,6 +10,7 @@ in VsOutFsIn {
 	vec3 normal_ES;   // Eye-space normal
 	LightSource light;
 } fs_in;
+
 
 out vec4 fragColour;
 
@@ -54,9 +53,5 @@ vec3 phongModel(vec3 fragPosition, vec3 fragNormal) {
 }
 
 void main() {
-	if( picking ) {
-		fragColour = vec4(material.kd, 1.0);
-	} else {
-		fragColour = vec4(phongModel(fs_in.position_ES, fs_in.normal_ES), 1.0);
-	}
+	fragColour = vec4(phongModel(fs_in.position_ES, fs_in.normal_ES), 1.0);
 }

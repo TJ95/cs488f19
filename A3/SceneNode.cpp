@@ -17,8 +17,7 @@ using namespace glm;
 
 // Static class variable
 unsigned int SceneNode::nodeInstanceCount = 0;
-unordered_map<int, SceneNode *> SceneNode::node_bank;
-bool SceneNode::do_picking = false;
+
 
 //---------------------------------------------------------------------------------------
 SceneNode::SceneNode(const std::string& name)
@@ -26,10 +25,9 @@ SceneNode::SceneNode(const std::string& name)
 	m_nodeType(NodeType::SceneNode),
 	trans(mat4()),
 	isSelected(false),
-	parent(nullptr),
 	m_nodeId(nodeInstanceCount++)
 {
-	node_bank[m_nodeId] = this;
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -70,7 +68,6 @@ const glm::mat4& SceneNode::get_inverse() const {
 
 //---------------------------------------------------------------------------------------
 void SceneNode::add_child(SceneNode* child) {
-	child->parent = this;
 	children.push_back(child);
 }
 
@@ -161,20 +158,3 @@ void SceneNode::updateShaderUniforms(
 	const ShaderProgram &shader,
 	const glm::mat4 &viewMatrix,
 	std::deque<glm::mat4> &stack) const {}
-
-void SceneNode::picking_switch(int cmd) const {
-	if (cmd == 0) {
-		do_picking = true;
-	} else if (cmd == 1) {
-		do_picking = false;
-	}
-}
-
-SceneNode *SceneNode::get_node(int i) const {
-	return node_bank[i];
-}
-
-bool SceneNode::node_exist(int id) const
-{
-	return node_bank.find(id) != node_bank.end();
-}
