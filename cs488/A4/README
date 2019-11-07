@@ -1,0 +1,17 @@
+CS488 - Fall 2019 Assignment 4
+Tianjun Zhang, 20643273, t269zhan@uwaterloo.ca
+
+Compilation:
+	- no changes to the default premake/make commands
+	- tested on lab computer gl29
+
+Manual:
+	- Bounding Volumes are off by default, UN-COMMENT line 17 in Mesh.cpp to activate
+	- Extra feature: Anti-aliasing via super-sampling is OFF by default,
+	  * UN-COMMENT line 13 in A4.hpp to activate
+	  * AA slows down rendering by quite a bit
+	  * Comparision screenshots via hier.lua are available in Assets/hier_AA
+	- Due to pressing time limitations no novel scene was made, had some really cool ideas in mind,
+	  hoping to get the 9/10 so I don't flop my project proposal
+	- screenshot.png is a 1024 by 1024 version of nonhier
+	- screenshots generated during testing are stored in Assets/ as well

@@ -5,6 +5,7 @@
 #include "SceneNode.hpp"
 #include "Primitive.hpp"
 #include "Material.hpp"
+// #include "ray.hpp"
 
 class GeometryNode : public SceneNode {
 public:
@@ -15,4 +16,8 @@ public:
 
 	Material *m_material;
 	Primitive *m_primitive;
+
+	virtual intersection intersect(const ray &ray);
+
+	virtual intersection intersect(const ray &ray, std::list<glm::mat4> trans);
 };

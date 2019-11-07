@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "Primitive.hpp"
+#include "intersection.hpp"
 
 // Use this #define to selectively compile your code to render the
 // bounding boxes around your mesh objects. Uncomment this option
@@ -32,10 +33,15 @@ struct Triangle
 class Mesh : public Primitive {
 public:
   Mesh( const std::string& fname );
-  
-private:
-	std::vector<glm::vec3> m_vertices;
-	std::vector<Triangle> m_faces;
+  virtual intersection intersect(const ray& ray);
+#ifdef RENDER_BOUNDING_VOLUMES
+  NonhierSphere* boundingVolume;
+#endif
+  virtual ~Mesh();
 
-    friend std::ostream& operator<<(std::ostream& out, const Mesh& mesh);
+private:
+  std::vector<glm::dvec3> m_vertices;
+  std::vector<Triangle> m_faces;
+
+  friend std::ostream& operator<<(std::ostream& out, const Mesh& mesh);
 };

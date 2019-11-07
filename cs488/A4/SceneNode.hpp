@@ -3,7 +3,8 @@
 #pragma once
 
 #include "Material.hpp"
-
+#include "intersection.hpp"
+#include "ray.hpp"
 #include <glm/glm.hpp>
 
 #include <list>
@@ -52,6 +53,10 @@ public:
 	NodeType m_nodeType;
 	std::string m_name;
 	unsigned int m_nodeId;
+
+    virtual intersection intersect(const ray & ray);
+	
+	virtual intersection intersect(const ray & ray, std::list<glm::mat4> trans);
 
 private:
 	// The number of SceneNode instances.

@@ -27,3 +27,55 @@ void GeometryNode::setMaterial( Material *mat )
 
 	m_material = mat;
 }
+
+intersection GeometryNode::intersect(const ray &ray) {
+	auto origin = invtrans * ray.origin;
+	auto dir = invtrans * ray.dir;
+	class ray temp_ray(origin, dir);
+	intersection intersec = m_primitive->intersect(ray);
+	if (intersec.hit) {
+		intersec.mat = (PhongMaterial *)m_material;
+		intersec.node = this;
+	}
+	return intersec;
+}
+
+intersection GeometryNode::intersect(const ray & ray, std::list<glm::mat4> transformations) {
+	auto origin = invtrans * ray.origin;
+	auto dir	= invtrans * ray.dir;
+
+	class ray new_ray(origin, dir);
+	
+	intersection i = m_primitive->intersect(new_ray);
+	
+	if (i.hit) {
+		// get the materials as usual
+		i.mat = (PhongMaterial *)m_material;
+		i.node = this;
+	}
+	
+	// Test with all remaning child, and return the closet intersection point.
+	for (auto child : children) {
+		intersection child_i = child->intersect(new_ray, transformations);
+		
+		if (child_i.hit) {
+			if (!i.hit || child_i.t < i.t) {
+				i = child_i;
+			}
+		}
+	}
+	
+	if (i.hit) {
+		auto normal = glm::dvec3(i.normal);
+		auto invtrans3 = glm::dmat3(invtrans);
+		
+		i.normal = glm::dvec4(glm::transpose(invtrans3) * normal, 0);
+		i.normal = glm::normalize(i.normal);
+		
+		i.received_ray.origin = trans * i.received_ray.origin;
+		i.received_ray.dir = trans * i.received_ray.dir;
+		
+		i.from_mat = ray.mat;
+	}
+	return i;
+}

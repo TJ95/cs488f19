@@ -136,3 +136,36 @@ std::ostream & operator << (std::ostream & os, const SceneNode & node) {
 	os << "]\n";
 	return os;
 }
+
+intersection SceneNode::intersect(const ray &ray) {
+	cout << "wtf" << endl;
+	return intersection();
+}
+
+intersection SceneNode::intersect(const ray &ray, std::list<glm::mat4> transformations) {
+	auto origin = invtrans * ray.origin;
+	auto dir	= invtrans * ray.dir;
+	
+	intersection return_val(ray, 0);
+	class ray new_ray(origin, dir);
+	
+	for (auto child : children) {
+		intersection i = child->intersect(new_ray, transformations);
+		if (i.hit) {
+			if (!return_val.hit || i.t < return_val.t) {
+				return_val = i;
+			}
+		}
+	}
+	
+	if (return_val.hit) {
+		// go back to world coords once a hit is detected
+		auto normal = glm::dvec3(return_val.normal);
+		auto invtrans3 = glm::dmat3(invtrans);
+		return_val.normal = glm::dvec4(glm::transpose(invtrans3) * normal, 0);
+		return_val.normal = glm::normalize(return_val.normal);
+		return_val.received_ray.origin = trans * return_val.received_ray.origin;
+		return_val.received_ray.dir = trans * return_val.received_ray.dir;
+	}
+	return return_val;
+}
