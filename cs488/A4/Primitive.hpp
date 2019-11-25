@@ -42,7 +42,7 @@ public:
 	virtual intersection intersect(const ray & ray);
 	virtual intersection intersect(const ray & ray, std::list<glm::mat4> transformations);
 
-private:
+public:
   glm::vec3 m_pos;
   double m_radius;
 };

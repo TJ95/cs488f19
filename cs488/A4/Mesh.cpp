@@ -5,6 +5,7 @@
 
 #include <glm/ext.hpp>
 #include <glm/gtx/intersect.hpp>
+#include "polyroots.hpp"
 using namespace std;
 
 // #include "cs488-framework/ObjFileDecoder.hpp"
@@ -74,6 +75,9 @@ intersection Mesh::intersect(const ray& ray) {
   double Infinity = std::numeric_limits<double>::infinity();
   double t = Infinity;
 
+#ifdef RENDER_BOUNDING_VOLUMES
+  return boundingVolume->intersect(ray);
+#else
   intersection result(ray,0);
   dvec3 normal;
 
@@ -131,6 +135,7 @@ intersection Mesh::intersect(const ray& ray) {
   }
 
   return result;
+#endif
 }
 
 std::ostream& operator<<(std::ostream& out, const Mesh& mesh)
