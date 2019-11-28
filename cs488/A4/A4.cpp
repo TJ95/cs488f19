@@ -250,7 +250,11 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 	ray reflected(point + EPSILON * Rr_dir, Rr_dir);
 	Hit hc = compute_ray_color(reflected, lights, counter + 1);
 
-	// calculate diffused color.
+	Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
+	N = glm::normalize(glm::dvec3(int_primary.normal));
+	Rr = Ri - 2.0 * N * (glm::dot(Ri, N));
+
+	// calculate diffused color
 	for (auto light : lights) {
 		glm::dvec3 colorSum {0, 0, 0};
 		glm::dvec4 point = int_primary.received_ray.origin + int_primary.received_ray.dir * int_primary.t;
