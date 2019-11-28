@@ -7,6 +7,7 @@ using namespace glm;
 using namespace std;
 
 #define DISTANCE 10.0
+#define MAX_RECURSE 100
 #define EPSILON 0.0001
 #include <glm/gtx/io.hpp>
 
@@ -73,13 +74,14 @@ void A4_Render(
 	// }
 	// rendering code
 	for (uint y = 0; y < h; ++y) {
-		//std::cout << "Currently Handling Row: " << y << std::endl;
+		// std::cout << "Currently Handling Row: " << y << std::endl;
+		// progress bar display
 		for (uint x = 0; x < w; ++x) {
 			printf("\r[%3d%%]", (int) ((y * h + x) * 100 / (1.0 * w * h)));
 #ifdef ANTIALIASING
 			//if (ANTIALIASING)
 			//{
-				auto p_world = world_coords(x, y, big_trans);
+				auto p_world =  world_coords(x, y, big_trans);
 				auto p_world1 = world_coords(x + 1, y, big_trans);
 				auto p_world2 = world_coords(x - 1, y, big_trans);
 				auto p_world3 = world_coords(x, y + 1, big_trans);
@@ -90,7 +92,7 @@ void A4_Render(
 				p_world3 = 0.5 * p_world + 0.5 * p_world3;
 				p_world4 = 0.5 * p_world + 0.5 * p_world4;
 
-				ray r = castRay(glm::dvec4(eye, 1), p_world);
+				ray r =  castRay(glm::dvec4(eye, 1), p_world);
 				ray r1 = castRay(glm::dvec4(eye, 1), p_world1);
 				ray r2 = castRay(glm::dvec4(eye, 1), p_world2);
 				ray r3 = castRay(glm::dvec4(eye, 1), p_world3);
@@ -102,7 +104,7 @@ void A4_Render(
 				glm::dvec3 color3(0, 0, 0);
 				glm::dvec3 color4(0, 0, 0);
 
-				Hit hc = compute_ray_color(r, lights, 0);
+				Hit hc =  compute_ray_color(r, lights, 0);
 				Hit hc1 = compute_ray_color(r1, lights, 0);
 				Hit hc2 = compute_ray_color(r2, lights, 0);
 				Hit hc3 = compute_ray_color(r3, lights, 0);
@@ -158,7 +160,7 @@ void A4_Render(
 				image(x, y, 1) = color.g;
 				image(x, y, 2) = color.b;
 #else			//} else {
-					auto p_world = world_coords(x, y, big_trans);
+				auto p_world = world_coords(x, y, big_trans);
 				ray r = castRay(dvec4(eye, 1), p_world);
 				glm::dvec3 color(0, 0, 0);
 				Hit hc = compute_ray_color(r, lights, 0);
@@ -172,7 +174,7 @@ void A4_Render(
 					image(x, y, 1) = color.g; //green
 					image(x, y, 2) = color.b; //blue
 				//}
-			}
+				}
 #endif
 		}
 	}
@@ -226,11 +228,27 @@ intersection hit_detection(const ray & r, SceneNode * root) {
 
 dvec3 directLight(const std::list<Light*> & lights, const intersection & int_primary, int counter) {
 	glm::vec3 color(0, 0, 0);
+
+	if (counter > MAX_RECURSE) {
+		return color;
+	}
+
 	glm::dvec4 point = int_primary.received_ray.origin + int_primary.received_ray.dir * int_primary.t;
-	
+
+	// reflectance factor
+	double reflectance = 0.3;
+	// double reflectance = simplifiedFresnelModel(int_primary.normal,
+	// 											glm::normalize(int_primary.received_ray.dir),
+	// 											int_primary.from_mat->refractive_index,
+	// 											int_primary.mat->refractive_index);
+
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
 	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
 	glm::dvec3 Rr = Ri - 2.0 * N * (glm::dot(Ri, N));
+
+	dvec4 Rr_dir = dvec4(glm::normalize(Rr), 0);
+	ray reflected(point + EPSILON * Rr_dir, Rr_dir);
+	Hit hc = compute_ray_color(reflected, lights, counter + 1);
 
 	// calculate diffused color.
 	for (auto light : lights) {
@@ -276,17 +294,24 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 		}
 		color += colorSum;
 	}
+
+	color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);
+
 	return color;
 }
 
 Hit compute_ray_color(const ray & r, const std::list<Light*> & lights, int counter) {
 	dvec3 color(0, 0, 0);
+
+	if (counter > MAX_RECURSE) {
+		return {false, color};
+	}
+
 	intersection primary_intersect = hit_detection(r, Scene);
 	
 	if (primary_intersect.hit) {
         // ambient color
-		color += primary_intersect.mat->m_kd * aColor;
-		
+		color += primary_intersect.mat->m_kd * aColor;	
 		// calculate the ray color
 		color += directLight(lights, primary_intersect, counter);
 	}
@@ -300,4 +325,25 @@ dvec3 backgroundColor(int x, int y)
 	color.g += 0;
 	color.b += (double)y / IMAGEHEIGHT;
 	return color;
+}
+
+// simulate the fresnel effect
+double simplifiedFresnelModel(const glm::dvec4 &normal,
+							  const glm::dvec4 &IncomingVector,
+							  double indexA,
+							  double indexB) {
+	// A->first medium B->second medium
+	double n = indexA / indexB;
+	double cosI = -glm::dot(IncomingVector, normal);
+	double sinT_2 = n * n * (1 - cosI * cosI);
+
+	if (sinT_2 > 1){
+		return 1.0;
+	}
+	double cosT = sqrt(1.0 - sinT_2);
+	double Rs = (indexB * cosI - indexA * cosT) / (indexB * cosI + indexA * cosT);
+	Rs = Rs * Rs;
+	double Rp = (indexB * cosT - indexA * cosI) / (indexA * cosI + indexB * cosT);
+	Rp = Rp * Rp;
+	return (Rs + Rp) / 2.0;
 }

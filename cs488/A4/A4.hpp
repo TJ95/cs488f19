@@ -45,3 +45,9 @@ glm::dvec3 directLight(const std::list<Light*> & lights, const intersection & in
 glm::dvec3 backgroundColor(int x, int y);
 Hit compute_ray_color(const ray & r, const std::list<Light*> & lights, int counter);
 void printProgress (float percentage);
+
+// simulate the fresnel effect
+double simplifiedFresnelModel(const glm::dvec4 &normal,
+							  const glm::dvec4 &IncomingVector,
+							  double indexA,
+							  double indexB);

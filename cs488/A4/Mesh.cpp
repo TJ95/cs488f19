@@ -56,9 +56,9 @@ Mesh::Mesh( const std::string& fname )
 
   const glm::vec3 min{minX, minY, minZ};
   const glm::vec3 max{maxX, maxY, maxZ};
-#ifdef RENDER_BOUNDING_VOLUMES
+//#ifdef RENDER_BOUNDING_VOLUMES
   boundingVolume = new NonhierSphere((max + min)/2, glm::length(max - min)/2);
-#endif
+//#endif
 }
 
 Mesh::~Mesh() {
@@ -69,9 +69,9 @@ Mesh::~Mesh() {
 
 
 intersection Mesh::intersect(const ray& ray) {
-#ifdef RENDER_BOUNDING_VOLUMES
+//#ifdef RENDER_BOUNDING_VOLUMES
   if(!boundingVolume->intersect(ray).hit) return intersection();
-#endif
+//#endif
   double Infinity = std::numeric_limits<double>::infinity();
   double t = Infinity;
 

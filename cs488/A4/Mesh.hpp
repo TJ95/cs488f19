@@ -14,7 +14,7 @@
 // Use this #define to selectively compile your code to render the
 // bounding boxes around your mesh objects. Uncomment this option
 // to turn it on.
-#define RENDER_BOUNDING_VOLUMES
+//#define RENDER_BOUNDING_VOLUMES
 
 struct Triangle
 {
@@ -34,9 +34,9 @@ class Mesh : public Primitive {
 public:
   Mesh( const std::string& fname );
   virtual intersection intersect(const ray& ray);
-#ifdef RENDER_BOUNDING_VOLUMES
+//#ifdef RENDER_BOUNDING_VOLUMES
   NonhierSphere* boundingVolume;
-#endif
+//#endif
   virtual ~Mesh();
 
 private:
