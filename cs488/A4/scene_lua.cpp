@@ -55,6 +55,7 @@
 #include "Primitive.hpp"
 #include "Material.hpp"
 #include "PhongMaterial.hpp"
+#include "Texture.hpp"
 #include "A4.hpp"
 
 typedef std::map<std::string,Mesh*> MeshMap;
@@ -530,6 +531,33 @@ int gr_node_rotate_cmd(lua_State* L)
   return 0;
 }
 
+// set texture of an primitive
+// extern "C"
+// int gr_node_set_texture_cmd(lua_State *L)
+// {
+//     GRLUA_DEBUG_CALL;
+    
+//     gr_node_ud* selfdata = (gr_node_ud*)luaL_checkudata(L, 1, "gr.node");
+//     luaL_argcheck(L, selfdata != 0, 1, "Node expected");
+//     GeometryNode* self = dynamic_cast<GeometryNode*>(selfdata->node);
+//     luaL_argcheck(L, self != 0, 1, "Geometry node expected");
+    
+//     int textureID = luaL_checknumber(L, 2);
+//     std::string fname = luaL_optstring(L, 3, "kobe.png");
+    
+//     Texture *texture = nullptr;
+    
+//     switch (textureID) {
+//         case TXID_IMAGE:
+//             texture = new ImageLayer(fname);
+//         default:
+//             break;
+//     }
+//     self->m_texture = texture;
+    
+//     return 0;
+// }
+
 // Garbage collection function for lua.
 extern "C"
 int gr_node_gc_cmd(lua_State* L)
@@ -591,6 +619,7 @@ static const luaL_Reg grlib_node_methods[] = {
   {"rotate", gr_node_rotate_cmd},
   {"translate", gr_node_translate_cmd},
   {"render", gr_render_cmd},
+  // {"set_texture", gr_node_set_texture_cmd},
   {0, 0}
 };
 

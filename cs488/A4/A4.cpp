@@ -234,13 +234,9 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 	}
 
 	glm::dvec4 point = int_primary.received_ray.origin + int_primary.received_ray.dir * int_primary.t;
-
+if (int_primary.mat->refractive_index != 0) {
 	// reflectance factor
 	//double reflectance = 0.3;
-	// double reflectance = simplifiedFresnelModel(int_primary.normal,
-	// 											glm::normalize(int_primary.received_ray.dir),
-	// 											int_primary.from_mat->refractive_index,
-	// 											int_primary.mat->refractive_index);
 	double reflectance = fresneleffect(int_primary.received_ray, int_primary);
 
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
@@ -251,12 +247,18 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 	ray reflected(point + EPSILON * Rr_dir, Rr_dir);
 	Hit hc = compute_ray_color(reflected, lights, counter + 1);
 
-	ray t = refract(int_primary.received_ray, int_primary);
-	Hit refractedColor = compute_ray_color(t, lights, counter + 1); // get refracted ray color.
-	if (refractedColor.hit){
-		color += (1 - reflectance) * refractedColor.color;
+	if (reflectance != 1.0) {
+		ray t = refract(int_primary.received_ray, int_primary);
+		Hit refractedColor = compute_ray_color(t, lights, counter + 1); // get refracted ray color.
+		if (refractedColor.hit){
+			color += (1 - reflectance) * refractedColor.color;
+		}
 	}
-
+	color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);
+}
+	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
+	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
+	glm::dvec3 Rr = Ri - 2.0 * N * (glm::dot(Ri, N));
 	// calculate diffused color
 	for (auto light : lights) {
 		glm::dvec3 colorSum {0, 0, 0};
@@ -271,38 +273,33 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 		double shadow_ray_length = glm::length(shadow_ray_direction);
 			
 		intersection shadow_intersect = hit_detection(shadow_ray, Scene);
-			
-		//if (shadow_intersect.hit) assert(shadow_intersect.t > 0);
+		
 		if (shadow_intersect.hit && glm::length(shadow_ray_direction * shadow_intersect.t) < shadow_ray_length) {
 
 		} else {
-					
-		auto light_ray = glm::normalize(shadow_ray_direction);
-		auto normal = glm::normalize(int_primary.normal);
-		auto cosineTheta = std::max(glm::dot(glm::dvec3(normal), glm::dvec3(light_ray)), 0.0);
-		auto kd = int_primary.mat->m_kd;
-                
+			auto light_ray = glm::normalize(shadow_ray_direction);
+			auto normal = glm::normalize(int_primary.normal);
+			auto cosineTheta = std::max(glm::dot(glm::dvec3(normal), glm::dvec3(light_ray)), 0.0);
+			auto kd = int_primary.mat->m_kd;	
 
-		if (glm::length(kd) != 0) {
-			// length of the light
-			double length = int_primary.t * glm::length(int_primary.received_ray.dir);
-			// Calculate diffused color
-			colorSum += kd * cosineTheta * light->colour / (light->falloff[0] +
-                                                            light->falloff[1] * length +
-                                                            light->falloff[2] * length * length);
-			
-		}
-				
-		if (glm::length(int_primary.mat->m_ks) > 0) {
-			cosineTheta = std::max(glm::dot(Rr, glm::normalize(glm::dvec3(light_direction))), 0.0);
-			auto phongCoeff = std::pow(cosineTheta, int_primary.mat->m_shininess);	
-			colorSum += phongCoeff * int_primary.mat->m_ks * light->colour;
-		}
+			if (glm::length(kd) != 0) {
+				// length of the light
+				double length = int_primary.t * glm::length(int_primary.received_ray.dir);
+				// Calculate diffused color
+				colorSum += kd * cosineTheta * light->colour / (light->falloff[0] +
+																light->falloff[1] * length +
+																light->falloff[2] * length * length);	
+			}	
+			if (glm::length(int_primary.mat->m_ks) > 0) {
+				cosineTheta = std::max(glm::dot(Rr, glm::normalize(glm::dvec3(light_direction))), 0.0);
+				auto phongCoeff = std::pow(cosineTheta, int_primary.mat->m_shininess);	
+				colorSum += phongCoeff * int_primary.mat->m_ks * light->colour;
+			}
 		}
 		color += colorSum;
 	}
 
-	color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);
+	//color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);
 
 	return color;
 }
@@ -373,75 +370,75 @@ ray refract(const ray& r, const intersection& inter) {
 	}
 }
 
-// simulate the fresnel effect
-// double fresneleffect(const ray &r, const intersection &inter){
+//simulate the fresnel effect
+double fresneleffect(const ray &r, const intersection &inter){
 
-// 	double kr;
-// 	dvec4 I = glm::normalize(r.dir);
-// 	dvec4 N = glm::normalize(inter.normal);
-// 	//cout << "ior:" << ior << endl;
-
-// 	double NdotI = glm::dot(N, I);
-// 	double etai = inter.from_mat->refractive_index;
-// 	double etat = inter.mat->refractive_index;
-
-// 	double cosi = NdotI;
-// 	//clamping
-// 	if (cosi > 1) cosi = 1;
-// 	if (cosi < -1) cosi = -1;
-
-// 	if (cosi > 0) std::swap(etai, etat);
-// 	// compute sini using snell's law
-// 	double sint = etai/etat * sqrt(std::max(0.0, 1- cosi * cosi));
-// 	// total internal refraction
-// 	if (sint >= 1) {
-// 		kr = 1;
-// 	} else {
-// 		double cost = sqrt(std::max(0.0, 1 - sint * sint));
-// 		cosi = abs(cosi);
-// 		double Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
-// 		double Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
-// 		kr = (Rs * Rs + Rp * Rp) / 2;
-// 	}
-// 	return kr;
-// }
-
-// simulate the fresnel effect
-double fresneleffect(const ray &r, const intersection &inter)
-{
-
-	float kr;
+	double kr;
 	dvec4 I = glm::normalize(r.dir);
 	dvec4 N = glm::normalize(inter.normal);
 	//cout << "ior:" << ior << endl;
 
-	float NdotI = glm::dot(N, I);
-	float etai = inter.from_mat->refractive_index;
-	float etat = inter.mat->refractive_index;
+	double NdotI = glm::dot(N, I);
+	double etai = inter.from_mat->refractive_index;
+	double etat = inter.mat->refractive_index;
 
-	float cosi = NdotI;
+	double cosi = NdotI;
 	//clamping
-	if (cosi > 1)
-		cosi = 1;
-	if (cosi < -1)
-		cosi = -1;
+	if (cosi > 1) cosi = 1;
+	if (cosi < -1) cosi = -1;
 
-	if (cosi > 0)
-		std::swap(etai, etat);
+	if (cosi > 0) std::swap(etai, etat);
 	// compute sini using snell's law
-	float sint = etai / etat * sqrtf(std::max(0.f, 1 - cosi * cosi));
+	double sint = etai/etat * sqrt(std::max(0.0, 1- cosi * cosi));
 	// total internal refraction
-	if (sint >= 1)
-	{
+	if (sint >= 1) {
 		kr = 1;
-	}
-	else
-	{
-		float cost = sqrtf(std::max(0.f, 1 - sint * sint));
-		cosi = fabs(cosi);
-		float Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
-		float Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+	} else {
+		double cost = sqrt(std::max(0.0, 1 - sint * sint));
+		cosi = abs(cosi);
+		double Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+		double Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
 		kr = (Rs * Rs + Rp * Rp) / 2;
 	}
 	return kr;
 }
+
+// simulate the fresnel effect
+// double fresneleffect(const ray &r, const intersection &inter)
+// {
+
+// 	float kr;
+// 	dvec4 I = glm::normalize(r.dir);
+// 	dvec4 N = glm::normalize(inter.normal);
+// 	//cout << "ior:" << ior << endl;
+
+// 	float NdotI = glm::dot(N, I);
+// 	float etai = inter.from_mat->refractive_index;
+// 	float etat = inter.mat->refractive_index;
+
+// 	float cosi = NdotI;
+// 	//clamping
+// 	if (cosi > 1)
+// 		cosi = 1;
+// 	if (cosi < -1)
+// 		cosi = -1;
+
+// 	if (cosi > 0)
+// 		std::swap(etai, etat);
+// 	// compute sini using snell's law
+// 	float sint = etai / etat * sqrtf(std::max(0.f, 1 - cosi * cosi));
+// 	// total internal refraction
+// 	if (sint >= 1)
+// 	{
+// 		kr = 1;
+// 	}
+// 	else
+// 	{
+// 		float cost = sqrtf(std::max(0.f, 1 - sint * sint));
+// 		cosi = fabs(cosi);
+// 		float Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+// 		float Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+// 		kr = (Rs * Rs + Rp * Rp) / 2;
+// 	}
+// 	return kr;
+// }

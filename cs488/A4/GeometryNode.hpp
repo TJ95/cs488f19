@@ -5,6 +5,7 @@
 #include "SceneNode.hpp"
 #include "Primitive.hpp"
 #include "Material.hpp"
+#include "Texture.hpp"
 // #include "ray.hpp"
 
 class GeometryNode : public SceneNode {
@@ -14,8 +15,9 @@ public:
 
 	void setMaterial( Material *material );
 
-	Material *m_material;
-	Primitive *m_primitive;
+	Material* m_material;
+	Primitive* m_primitive;
+	Texture* m_texture;
 
 	virtual intersection intersect(const ray &ray);
 

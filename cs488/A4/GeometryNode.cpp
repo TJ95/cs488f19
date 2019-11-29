@@ -8,6 +8,7 @@ GeometryNode::GeometryNode(
 	: SceneNode( name )
 	, m_material( mat )
 	, m_primitive( prim )
+	, m_texture( nullptr )
 {
 	m_nodeType = NodeType::GeometryNode;
 }
