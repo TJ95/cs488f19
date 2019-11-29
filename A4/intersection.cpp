@@ -10,4 +10,4 @@ intersection::intersection(const ray &ray, double t, bool hit) : received_ray(ra
 intersection::intersection(const ray &ray, double t) : received_ray(ray), t(t), hit(false) {}
 
 // ctor 3
-intersection::intersection() : received_ray(ray(glm::vec4(), glm::vec4())), t(0), hit(false) {}
+intersection::intersection() : received_ray(ray(glm::vec3(), glm::vec3())), t(0), hit(false) {}

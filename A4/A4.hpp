@@ -46,5 +46,9 @@ glm::dvec3 backgroundColor(int x, int y);
 Hit compute_ray_color(const ray & r, const std::list<Light*> & lights, int counter);
 void printProgress (float percentage);
 
-ray refract(const ray &ray, const intersection &inter);
-double fresneleffect(const ray &r, const intersection &inter);
+// simulate the fresnel effect
+double simplifiedFresnelModel(const glm::dvec4 &normal,
+							  const glm::dvec4 &IncomingVector,
+							  double indexA,
+							  double indexB);
+ray refractedRay(const ray &ray, const intersection &inter);

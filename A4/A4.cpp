@@ -237,11 +237,10 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 
 	// reflectance factor
 	//double reflectance = 0.3;
-	// double reflectance = simplifiedFresnelModel(int_primary.normal,
-	// 											glm::normalize(int_primary.received_ray.dir),
-	// 											int_primary.from_mat->refractive_index,
-	// 											int_primary.mat->refractive_index);
-	double reflectance = fresneleffect(int_primary.received_ray, int_primary);
+	double reflectance = simplifiedFresnelModel(int_primary.normal,
+												glm::normalize(int_primary.received_ray.dir),
+												int_primary.from_mat->refractive_index,
+												int_primary.mat->refractive_index);
 
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
 	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
@@ -251,7 +250,7 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 	ray reflected(point + EPSILON * Rr_dir, Rr_dir);
 	Hit hc = compute_ray_color(reflected, lights, counter + 1);
 
-	ray t = refract(int_primary.received_ray, int_primary);
+	ray t = refractedRay(int_primary.received_ray, int_primary);
 	Hit refractedColor = compute_ray_color(t, lights, counter + 1); // get refracted ray color.
 	if (refractedColor.hit){
 		color += (1 - reflectance) * refractedColor.color;
@@ -334,114 +333,66 @@ dvec3 backgroundColor(int x, int y)
 	return color;
 }
 
-// Compute the direction for a refracted ray and return a newly generated ray object
-ray refract(const ray& r, const intersection& inter) {
+// simulate the fresnel effect
+double simplifiedFresnelModel(const glm::dvec4 &normal,
+							  const glm::dvec4 &IncomingVector,
+							  double indexA,
+							  double indexB) {
+	// A->first medium B->second medium
+	double n = indexA / indexB;
+	double cosI = -glm::dot(IncomingVector, normal);
+	double sinT_2 = n * n * (1 - cosI * cosI);
 
-	dvec4 I = glm::normalize(r.dir);
-	dvec4 N = glm::normalize(inter.normal);
-	//auto ior = inter.mat->refractive_index;
-	//cout << "ior:" << ior << endl;
-
-	double NdotI = glm::dot(N,I);
-	double etai = inter.from_mat->refractive_index;
-	double etat = inter.mat->refractive_index;
-
-	double cosi = NdotI;
-	//clamping
-	if (cosi > 1) cosi = 1;
-	if (cosi < -1) cosi = -1;
-	auto n = N;
-
-	if (cosi < 0) {
-		cosi = -cosi;
-	} else {
-		std::swap(etai, etat);
-		n = -N;
+	if (sinT_2 > 1){
+		return 1.0;
 	}
-	double eta = etai/etat;
-	double k = 1 - eta * eta * (1 - cosi * cosi);
-	dvec4 direction;
-	if (k < 0) {
-		//cout << "Total internal refraction" << endl;
-		return ray({0, 0, 0, 1}, {0, 0, 0, 0});
-	} else {
-		glm::dvec4 hitpoint = r.origin + r.dir * inter.t;
-		direction = eta * I + (eta * cosi - sqrt(k)) * n;
-		direction = glm::normalize(direction);
-		ray new_ray(hitpoint + EPSILON * direction, direction);
-		return new_ray;
-	}
+	double cosT = sqrt(1.0 - sinT_2);
+	double Rs = (indexB * cosI - indexA * cosT) / (indexB * cosI + indexA * cosT);
+	Rs = Rs * Rs;
+	double Rp = (indexB * cosT - indexA * cosI) / (indexA * cosI + indexB * cosT);
+	Rp = Rp * Rp;
+	return (Rs + Rp) / 2.0;
 }
 
-// simulate the fresnel effect
-// double fresneleffect(const ray &r, const intersection &inter){
+ray refractedRay(const ray &r, const intersection &inter) {
+	ray normalizedRay(r.origin, glm::normalize(r.dir));
 
-// 	double kr;
-// 	dvec4 I = glm::normalize(r.dir);
-// 	dvec4 N = glm::normalize(inter.normal);
-// 	//cout << "ior:" << ior << endl;
+	double n1 = inter.from_mat->refractive_index;
+	double n2 = inter.mat->refractive_index;
+	double nr = n1 / n2;
 
-// 	double NdotI = glm::dot(N, I);
-// 	double etai = inter.from_mat->refractive_index;
-// 	double etat = inter.mat->refractive_index;
+	double cosineTheta_i = -glm::dot(inter.normal, normalizedRay.dir);
+	double sineTheta_i_t2 = 1 - cosineTheta_i * cosineTheta_i;
+	double sineTheta_t_t2 = nr * nr * sineTheta_i_t2;
 
-// 	double cosi = NdotI;
-// 	//clamping
-// 	if (cosi > 1) cosi = 1;
-// 	if (cosi < -1) cosi = -1;
+// #if DEBUG
+// 	std::cout << "---------------------------" << std::endl;
+// 	std::cout << "Incoming refractive index: " << inter.from_mat->refractive_index << std::endl;
+// 	std::cout << "Incoming angle: " << glm::degrees(glm::acos(cosineTheta_i)) << std::endl;
+// 	std::cout << "To refractive index: " << inter.mat->refractive_index << std::endl;
+// 	std::cout << "Refracted angle: " << glm::degrees(glm::asin(sqrt(sineTheta_t_t2))) << std::endl;
+// #endif
 
-// 	if (cosi > 0) std::swap(etai, etat);
-// 	// compute sini using snell's law
-// 	double sint = etai/etat * sqrt(std::max(0.0, 1- cosi * cosi));
-// 	// total internal refraction
-// 	if (sint >= 1) {
-// 		kr = 1;
-// 	} else {
-// 		double cost = sqrt(std::max(0.0, 1 - sint * sint));
-// 		cosi = abs(cosi);
-// 		double Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
-// 		double Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
-// 		kr = (Rs * Rs + Rp * Rp) / 2;
-// 	}
-// 	return kr;
-// }
-
-// simulate the fresnel effect
-double fresneleffect(const ray &r, const intersection &inter)
-{
-
-	float kr;
-	dvec4 I = glm::normalize(r.dir);
-	dvec4 N = glm::normalize(inter.normal);
-	//cout << "ior:" << ior << endl;
-
-	float NdotI = glm::dot(N, I);
-	float etai = inter.from_mat->refractive_index;
-	float etat = inter.mat->refractive_index;
-
-	float cosi = NdotI;
-	//clamping
-	if (cosi > 1)
-		cosi = 1;
-	if (cosi < -1)
-		cosi = -1;
-
-	if (cosi > 0)
-		std::swap(etai, etat);
-	// compute sini using snell's law
-	float sint = etai / etat * sqrtf(std::max(0.f, 1 - cosi * cosi));
-	// total internal refraction
-	if (sint >= 1)
+	if (sineTheta_t_t2 > 1)
 	{
-		kr = 1;
+		// Total internal reflection.
+// #if DEBUG
+// 		std::cout << "TIR" << std::endl;
+// #endif
+		return ray({0, 0, 0, 1}, {0, 0, 0, 0});
 	}
-	else
-	{
-		float cost = sqrtf(std::max(0.f, 1 - sint * sint));
-		cosi = fabs(cosi);
-		float Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
-		float Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
-		kr = (Rs * Rs + Rp * Rp) / 2;
-	}
-	return kr;
+
+	//    auto direction = (nr * cosineTheta_i - sqrt(1 - sineTheta_t_t2)) * intersection.normal - nr * normalizedRay.direction;
+	auto direction = nr * normalizedRay.dir + (nr * cosineTheta_i - sqrt(1 - sineTheta_t_t2)) * inter.normal;
+	direction = glm::normalize(direction);
+	assert(std::abs(direction.w) < EPSILON);
+	assert(inter.t > 0);
+	glm::dvec4 hitpoint = r.origin + r.dir * inter.t;
+
+	ray ray(hitpoint + EPSILON * direction, direction);
+// #if DEBUG
+// 	std::cout << "Real refracted angle: " << glm::degrees(glm::acos(glm::dot(r.dir, -inter.normal))) << std::endl;
+// #endif
+
+	return r;
 }

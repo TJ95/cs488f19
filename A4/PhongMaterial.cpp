@@ -3,12 +3,12 @@
 #include "PhongMaterial.hpp"
 
 static PhongMaterial air_metric = PhongMaterial({0, 0, 0}, {0, 0, 0}, 0, 1.0);
-// static PhongMaterial glass_metric = PhongMaterial({0, 0, 0}, {0, 0, 0}, 0, 1.5, 9.9359e-9);
-// static PhongMaterial water_metric = PhongMaterial({0, 0, 0}, {0, 0, 0}, 0, 1.3, 0.000002);
+static PhongMaterial glass_metric = PhongMaterial({0, 0, 0}, {0, 0, 0}, 0, 1.5, 9.9359e-9);
+static PhongMaterial water_metric = PhongMaterial({0, 0, 0}, {0, 0, 0}, 0, 1.3, 0.000002);
 
 PhongMaterial *PhongMaterial::Air = &air_metric;
-// PhongMaterial *PhongMaterial::Glass = &glass_metric;
-// PhongMaterial *PhongMaterial::Water = &water_metric;
+PhongMaterial *PhongMaterial::Glass = &glass_metric;
+PhongMaterial *PhongMaterial::Water = &water_metric;
 
 PhongMaterial::PhongMaterial(
 	const glm::vec3& kd, const glm::vec3& ks, double shininess )
@@ -36,15 +36,15 @@ PhongMaterial::PhongMaterial(
 	: m_kd(kd), m_ks(ks), m_shininess(shininess), refractive_index(ref), extinction_coefficient(ex)
 {}
 
-// PhongMaterial::PhongMaterial(const glm::vec3 &kd,
-// 			  const glm::vec3 &ks,
-// 			  double shininess,
-// 			  double refractive_ind,
-// 			  double extinct_coeff,
-// 			  const glm::vec4 &glossy) 
-// {
-// 	glossy_coef = glossy;
-// }
+PhongMaterial::PhongMaterial(const glm::vec3 &kd,
+			  const glm::vec3 &ks,
+			  double shininess,
+			  double refractive_ind,
+			  double extinct_coeff,
+			  const glm::vec4 &glossy) 
+{
+	glossy_coef = glossy;
+}
 
 // default dtor
 PhongMaterial::~PhongMaterial()

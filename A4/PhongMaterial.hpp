@@ -35,6 +35,6 @@ public:
   glm::dvec4 glossy_coef;
 
   static PhongMaterial* Air;
-  // static PhongMaterial* Glass;
-  // static PhongMaterial* Water;
+  static PhongMaterial *Glass;
+  static PhongMaterial *Water;
 };
