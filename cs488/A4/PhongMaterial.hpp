@@ -11,6 +11,7 @@ public:
   PhongMaterial(const glm::vec3& kd, const glm::vec3& ks, double shininess);
   // additional ctors to create phong mats with new attributes
   PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind);
+  PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind, const int trans);
   PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks, double shininess, 
                 double ref_ind, double extinct);
   PhongMaterial(const glm::vec3 &kd,
@@ -32,6 +33,7 @@ public:
   double refractive_index;
   double extinction_coefficient;
   double m_shininess;
+  int transparency;
   glm::dvec4 glossy_coef;
 
   static PhongMaterial* Air;

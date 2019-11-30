@@ -405,11 +405,11 @@ int gr_material_cmd(lua_State* L)
 
   double shininess = luaL_checknumber(L, 3);
   double ior = luaL_optnumber(L, 4, 1.0);
+  int transparency = luaL_optnumber(L, 5, 1);
 
   data->material = new PhongMaterial(glm::vec3(kd[0], kd[1], kd[2]),
                                      glm::vec3(ks[0], ks[1], ks[2]),
-                                     
-                                     shininess, ior);
+                                     shininess, ior, transparency);
 
   luaL_newmetatable(L, "gr.material");
   lua_setmetatable(L, -2);
@@ -532,31 +532,23 @@ int gr_node_rotate_cmd(lua_State* L)
 }
 
 // set texture of an primitive
-// extern "C"
-// int gr_node_set_texture_cmd(lua_State *L)
-// {
-//     GRLUA_DEBUG_CALL;
+extern "C"
+int gr_node_set_texture_cmd(lua_State *L)
+{
+    GRLUA_DEBUG_CALL;
     
-//     gr_node_ud* selfdata = (gr_node_ud*)luaL_checkudata(L, 1, "gr.node");
-//     luaL_argcheck(L, selfdata != 0, 1, "Node expected");
-//     GeometryNode* self = dynamic_cast<GeometryNode*>(selfdata->node);
-//     luaL_argcheck(L, self != 0, 1, "Geometry node expected");
+    gr_node_ud* selfdata = (gr_node_ud*)luaL_checkudata(L, 1, "gr.node");
+    luaL_argcheck(L, selfdata != 0, 1, "Node expected");
+    GeometryNode* self = dynamic_cast<GeometryNode*>(selfdata->node);
+    luaL_argcheck(L, self != 0, 1, "Geometry node expected");
     
-//     int textureID = luaL_checknumber(L, 2);
-//     std::string fname = luaL_optstring(L, 3, "kobe.png");
+    std::string fname = luaL_optstring(L, 2, "wood.png");
+    Texture *texture = nullptr;
+    texture = new ImageTexture(fname);
+    self->m_texture = texture;
     
-//     Texture *texture = nullptr;
-    
-//     switch (textureID) {
-//         case TXID_IMAGE:
-//             texture = new ImageLayer(fname);
-//         default:
-//             break;
-//     }
-//     self->m_texture = texture;
-    
-//     return 0;
-// }
+    return 0;
+}
 
 // Garbage collection function for lua.
 extern "C"
@@ -615,11 +607,11 @@ static const luaL_Reg grlib_node_methods[] = {
   {"__gc", gr_node_gc_cmd},
   {"add_child", gr_node_add_child_cmd},
   {"set_material", gr_node_set_material_cmd},
+  {"set_texture", gr_node_set_texture_cmd},
   {"scale", gr_node_scale_cmd},
   {"rotate", gr_node_rotate_cmd},
   {"translate", gr_node_translate_cmd},
   {"render", gr_render_cmd},
-  // {"set_texture", gr_node_set_texture_cmd},
   {0, 0}
 };
 

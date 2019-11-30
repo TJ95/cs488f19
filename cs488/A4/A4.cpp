@@ -7,7 +7,7 @@ using namespace glm;
 using namespace std;
 
 #define DISTANCE 10.0
-#define MAX_RECURSE 5
+#define RECURSION_DEPTH 5
 #define EPSILON 0.0001
 #include <glm/gtx/io.hpp>
 
@@ -73,111 +73,139 @@ void A4_Render(
 #endif
 	// }
 	// rendering code
-	for (uint y = 0; y < h; ++y) {
-		// std::cout << "Currently Handling Row: " << y << std::endl;
-		// progress bar display
-		for (uint x = 0; x < w; ++x) {
-			printf("\r[%3d%%]", (int) ((y * h + x) * 100 / (1.0 * w * h)));
+	// for (uint y = 0; y < h; ++y) {
+	// 	// std::cout << "Currently Handling Row: " << y << std::endl;
+	// 	// progress bar display
+	// 	for (uint x = 0; x < w; ++x) {
+	std::size_t max = w * h;
+	std::size_t cores = std::thread::hardware_concurrency();
+	cout << "Core usage: " << cores << endl;
+	std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+	volatile std::atomic<std::size_t> count(0);
+	{
+		std::vector<std::future<void>> future_vector;
+		while (cores--)
+		{
+			future_vector.emplace_back(
+				std::async([=, &image, &count](){
+				while (true)
+				{
+					std::size_t index = count++;
+					if (index >= max)
+						break;
+					double x = index % w;
+					double y = index / w;
+					
 #ifdef ANTIALIASING
-			//if (ANTIALIASING)
-			//{
-				auto p_world =  world_coords(x, y, big_trans);
-				auto p_world1 = world_coords(x + 1, y, big_trans);
-				auto p_world2 = world_coords(x - 1, y, big_trans);
-				auto p_world3 = world_coords(x, y + 1, big_trans);
-				auto p_world4 = world_coords(x, y - 1, big_trans);
+					//if (ANTIALIASING)
+					//{
+					auto p_world = world_coords(x, y, big_trans);
+					auto p_world1 = world_coords(x + 1, y, big_trans);
+					auto p_world2 = world_coords(x - 1, y, big_trans);
+					auto p_world3 = world_coords(x, y + 1, big_trans);
+					auto p_world4 = world_coords(x, y - 1, big_trans);
 
-				p_world1 = 0.5 * p_world + 0.5 * p_world1;
-				p_world2 = 0.5 * p_world + 0.5 * p_world2;
-				p_world3 = 0.5 * p_world + 0.5 * p_world3;
-				p_world4 = 0.5 * p_world + 0.5 * p_world4;
+					p_world1 = 0.5 * p_world + 0.5 * p_world1;
+					p_world2 = 0.5 * p_world + 0.5 * p_world2;
+					p_world3 = 0.5 * p_world + 0.5 * p_world3;
+					p_world4 = 0.5 * p_world + 0.5 * p_world4;
 
-				ray r =  castRay(glm::dvec4(eye, 1), p_world);
-				ray r1 = castRay(glm::dvec4(eye, 1), p_world1);
-				ray r2 = castRay(glm::dvec4(eye, 1), p_world2);
-				ray r3 = castRay(glm::dvec4(eye, 1), p_world3);
-				ray r4 = castRay(glm::dvec4(eye, 1), p_world4);
+					ray r = castRay(glm::dvec4(eye, 1), p_world);
+					ray r1 = castRay(glm::dvec4(eye, 1), p_world1);
+					ray r2 = castRay(glm::dvec4(eye, 1), p_world2);
+					ray r3 = castRay(glm::dvec4(eye, 1), p_world3);
+					ray r4 = castRay(glm::dvec4(eye, 1), p_world4);
 
-				glm::dvec3 color(0, 0, 0);
-				glm::dvec3 color1(0, 0, 0);
-				glm::dvec3 color2(0, 0, 0);
-				glm::dvec3 color3(0, 0, 0);
-				glm::dvec3 color4(0, 0, 0);
+					glm::dvec3 color(0, 0, 0);
+					glm::dvec3 color1(0, 0, 0);
+					glm::dvec3 color2(0, 0, 0);
+					glm::dvec3 color3(0, 0, 0);
+					glm::dvec3 color4(0, 0, 0);
 
-				Hit hc =  compute_ray_color(r, lights, 0);
-				Hit hc1 = compute_ray_color(r1, lights, 0);
-				Hit hc2 = compute_ray_color(r2, lights, 0);
-				Hit hc3 = compute_ray_color(r3, lights, 0);
-				Hit hc4 = compute_ray_color(r4, lights, 0);
+					Hit hc = compute_ray_color(r, lights, 0);
+					Hit hc1 = compute_ray_color(r1, lights, 0);
+					Hit hc2 = compute_ray_color(r2, lights, 0);
+					Hit hc3 = compute_ray_color(r3, lights, 0);
+					Hit hc4 = compute_ray_color(r4, lights, 0);
 
-				// averge all of them
-				if (hc.hit)
-				{
-					color += glm::clamp(hc.color, colorMin, colorMax);
-				}
-				else
-				{
-					color += backgroundColor(x, y);
-				}
+					// averge all of them
+					if (hc.hit)
+					{
+						color += glm::clamp(hc.color, colorMin, colorMax);
+					}
+					else
+					{
+						color += backgroundColor(x, y);
+					}
 
-				if (hc1.hit)
-				{
-					color += glm::clamp(hc1.color, colorMin, colorMax);
-				}
-				else
-				{
-					color += backgroundColor(x, y);
-				}
+					if (hc1.hit)
+					{
+						color += glm::clamp(hc1.color, colorMin, colorMax);
+					}
+					else
+					{
+						color += backgroundColor(x, y);
+					}
 
-				if (hc2.hit)
-				{
-					color += glm::clamp(hc2.color, colorMin, colorMax);
-				}
-				else
-				{
-					color += backgroundColor(x, y);
-				}
-				if (hc3.hit)
-				{
-					color += glm::clamp(hc3.color, colorMin, colorMax);
-				}
-				else
-				{
-					color += backgroundColor(x, y);
-				}
-				if (hc4.hit)
-				{
-					color += glm::clamp(hc4.color, colorMin, colorMax);
-				}
-				else
-				{
-					color += backgroundColor(x, y);
-				}
+					if (hc2.hit)
+					{
+						color += glm::clamp(hc2.color, colorMin, colorMax);
+					}
+					else
+					{
+						color += backgroundColor(x, y);
+					}
+					if (hc3.hit)
+					{
+						color += glm::clamp(hc3.color, colorMin, colorMax);
+					}
+					else
+					{
+						color += backgroundColor(x, y);
+					}
+					if (hc4.hit)
+					{
+						color += glm::clamp(hc4.color, colorMin, colorMax);
+					}
+					else
+					{
+						color += backgroundColor(x, y);
+					}
 
-				color = color / 5.0; // average the color.
+					color = color / 5.0; // average the color.
 
-				image(x, y, 0) = color.r;
-				image(x, y, 1) = color.g;
-				image(x, y, 2) = color.b;
+					image(x, y, 0) = color.r;
+					image(x, y, 1) = color.g;
+					image(x, y, 2) = color.b;
 #else			//} else {
-				auto p_world = world_coords(x, y, big_trans);
-				ray r = castRay(dvec4(eye, 1), p_world);
-				glm::dvec3 color(0, 0, 0);
-				Hit hc = compute_ray_color(r, lights, 0);
-				if (hc.hit) {
-					image(x, y, 0) = glm::clamp(hc.color.r, colorMin, colorMax);
-					image(x, y, 1) = glm::clamp(hc.color.g, colorMin, colorMax);
-					image(x, y, 2) = glm::clamp(hc.color.b, colorMin, colorMax);
-				} else {
-					glm::dvec3 color = backgroundColor(x, y);
-					image(x, y, 0) = color.r; //red
-					image(x, y, 1) = color.g; //green
-					image(x, y, 2) = color.b; //blue
-				//}
-				}
+					auto p_world = world_coords(x, y, big_trans);
+					ray r = castRay(dvec4(eye, 1), p_world);
+					glm::dvec3 color(0, 0, 0);
+					Hit hc = compute_ray_color(r, lights, 0);
+					if (hc.hit)
+					{
+						image(x, y, 0) = glm::clamp(hc.color.r, colorMin, colorMax);
+						image(x, y, 1) = glm::clamp(hc.color.g, colorMin, colorMax);
+						image(x, y, 2) = glm::clamp(hc.color.b, colorMin, colorMax);
+					}
+					else
+					{
+						glm::dvec3 color = backgroundColor(x, y);
+						image(x, y, 0) = color.r; //red
+						image(x, y, 1) = color.g; //green
+						image(x, y, 2) = color.b; //blue
+						//}
+					}
 #endif
-		}
+					printf("\r[%3d%%]", (int)((y * h + x) * 100 / (1.0 * w * h)));
+				}
+			})
+			);
+		} //sahdjhajsdh
 	}
+		std::chrono::system_clock::time_point finish = std::chrono::system_clock::now();
+
+		std::cout << "Time took to complete (seconds): " << std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count() / 1000.0 << std::endl;
 }
 
 dmat4 compute_device_world_transformation (double w, double h
@@ -208,7 +236,7 @@ dmat4 compute_device_world_transformation (double w, double h
 	return trans2 * rot * scal * transC;
 }
 
-dvec4 world_coords(double x, double y, dmat4 &trans)
+dvec4 world_coords(double x, double y, const dmat4 &trans)
 {
 	auto device_coords = dvec4(x, y, 0, 1);
 	auto cd_w = trans * device_coords;
@@ -229,7 +257,7 @@ intersection hit_detection(const ray & r, SceneNode * root) {
 dvec3 directLight(const std::list<Light*> & lights, const intersection & int_primary, int counter) {
 	glm::vec3 color(0, 0, 0);
 
-	if (counter > MAX_RECURSE) {
+	if (counter > RECURSION_DEPTH) {
 		return color;
 	}
 
@@ -237,7 +265,14 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 if (int_primary.mat->refractive_index != 0) {
 	// reflectance factor
 	//double reflectance = 0.3;
+	// double reflectance;
+	// if (int_primary.mat->transparency == 1) {
+	// 	reflectance = fresneleffect(int_primary.received_ray, int_primary);
+	// } else {
+	// 	reflectance = int_primary.mat->refractive_index;
+	// }
 	double reflectance = fresneleffect(int_primary.received_ray, int_primary);
+	if (int_primary.mat->refractive_index == 1.0) reflectance = 1.0;
 
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
 	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
@@ -282,6 +317,15 @@ if (int_primary.mat->refractive_index != 0) {
 			auto cosineTheta = std::max(glm::dot(glm::dvec3(normal), glm::dvec3(light_ray)), 0.0);
 			auto kd = int_primary.mat->m_kd;	
 
+			// Texture Mapping
+			Texture *texture = int_primary.textureInfo();
+			if (texture) {
+				double u = int_primary.primitive_int_point.x;
+				double v = int_primary.primitive_int_point.z;
+				kd = texture->color(u, v);
+				//std::cout << "got here " << std::endl;
+			}
+
 			if (glm::length(kd) != 0) {
 				// length of the light
 				double length = int_primary.t * glm::length(int_primary.received_ray.dir);
@@ -307,7 +351,7 @@ if (int_primary.mat->refractive_index != 0) {
 Hit compute_ray_color(const ray & r, const std::list<Light*> & lights, int counter) {
 	dvec3 color(0, 0, 0);
 
-	if (counter > MAX_RECURSE) {
+	if (counter > RECURSION_DEPTH) {
 		return {false, color};
 	}
 

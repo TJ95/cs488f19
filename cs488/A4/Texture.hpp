@@ -5,21 +5,15 @@
 #include <string>
 #include <vector>
 
-enum TXID
-{
-    TXID_IMAGE = 0
-};
-
 class Texture {
 public:
     int tid;
-    Texture(int id);
     virtual glm::dvec3 color(double u, double v);
 };
 
-class ImageLayer : public Texture {
+class ImageTexture : public Texture {
 public:
-    ImageLayer(std::string fname);
+    ImageTexture(std::string filename);
     virtual glm::dvec3 color(double u, double v);
     
     std::vector<unsigned char> image;

@@ -18,24 +18,34 @@ PhongMaterial::PhongMaterial(
 {
 	refractive_index = 1.0;
 	extinction_coefficient = 0.0;
+	transparency = 0;
 }
 
 // overloading ctors
 PhongMaterial::PhongMaterial(
-	const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref)
+	const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind)
 	: m_kd(kd)
 	, m_ks(ks)
 	, m_shininess(shininess)
-	, refractive_index(ref)
+	, refractive_index(ref_ind)
+{
+	extinction_coefficient = 0.0;
+	transparency = 0;
+}
+
+PhongMaterial::PhongMaterial(
+	const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind, const int trans)
+	: m_kd(kd), m_ks(ks), m_shininess(shininess), refractive_index(ref_ind), transparency(trans)
 {
 	extinction_coefficient = 0.0;
 }
 
 PhongMaterial::PhongMaterial(
-	const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref, double ex)
-	: m_kd(kd), m_ks(ks), m_shininess(shininess), refractive_index(ref), extinction_coefficient(ex)
-{}
-
+	const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind, double ex)
+	: m_kd(kd), m_ks(ks), m_shininess(shininess), refractive_index(ref_ind), extinction_coefficient(ex)
+{
+	transparency = 0;
+}
 // PhongMaterial::PhongMaterial(const glm::vec3 &kd,
 // 			  const glm::vec3 &ks,
 // 			  double shininess,

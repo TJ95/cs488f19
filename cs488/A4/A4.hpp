@@ -10,6 +10,9 @@
 #include "Texture.hpp"
 #include "ray.hpp"
 #include "intersection.hpp"
+#include <thread>
+#include <future>
+#include <chrono>
 
 #define ANTIALIASING
 
@@ -37,7 +40,7 @@ public:
 	glm::dvec3 color;
 };
 
-glm::dvec4 world_coords(double x, double y, glm::dmat4 &trans);
+glm::dvec4 world_coords(double x, double y, const glm::dmat4 &trans);
 glm::dmat4 compute_device_world_transformation (double x, double y
 										  ,double w, double h, double d
 										  ,glm::vec3 eye, glm::vec3 view, glm::vec3 up);

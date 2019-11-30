@@ -272,6 +272,10 @@ intersection NonhierBox::intersect(const ray &ray){
         result.primitive_int_point = int_point;
     }
 
+    if (result.hit) {
+        result.primitive_int_point = result.received_ray.origin + result.received_ray.dir * result.t;
+    }
+
     return result;
 }
 

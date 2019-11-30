@@ -1,28 +1,30 @@
 -- Red/green test room
-gold = gr.material(	 {0.9, 0.8, 0.4}, 	{0.8, 0.8, 0.4}, 	25, 0.0)
-gold2 = gr.material( {1.0, 1.0, 0.3},   {1.0, 1.0, 1.0},	25, 0.0)
-grass = gr.material( {0.1, 0.7, 0.1}, 	{0.0, 0.0, 0.0}, 	0,  0.0)
-blue = gr.material(  {0.2, 0.2, 0.9}, 	{0.1, 0.1, 0.5}, 	25, 1e-5)
-glass = gr.material( {0.05, 0.05, 0.05}, {0.7, 0.7, 0.7}, 25, 1.5)			--enable optics
-water = gr.material( {0.05, 0.05, 0.05}, {0.6, 0.6, 0.6}, 25, 1.3333)
-red_wall = gr.material( {0.6, 0.2, 0.3}, {0.3, 0.05, 0.05}, 25, 0.0)
-green_wall = gr.material( {0.2, 0.6, 0.2}, {0.1, 0.05, 0.5}, 25, 0.0)
-grey_wall = gr.material( {0.6, 0.623, 0.7002}, {0.3, 0.3, 0.3}, 25, 0.0)
-reflective_wall = gr.material( {0, 0, 0}, {0.9, 0.9, 0.9}, 25, 1e-10)
-white_ceiling = gr.material({0.9, 0.9, 0.9}, {0.5, 0.5, 0.5}, 25, 0.0)
-white_surf = gr.material({0.9, 0.9, 0.9}, {0.9, 0.9, 0.9}, 25, 1e-5)
-mat4  = gr.material({0.7, 0.6, 1.0}, {0.5, 0.4, 0.8}, 25, 0.0)			--disable optics
-mat1  = gr.material({0.7, 1.0, 0.7}, {0.5, 0.7, 0.5}, 25, 0.0)  		--disable optics
-mat3  = gr.material({1.0, 0.6, 0.1}, {0.5, 0.7, 0.5}, 25, 0.0)			--disable optics
-reflective = gr.material({0.0, 0.0, 0.0}, {0.7, 0.7, 0.7}, 25, 0.0)		--disable optics and disfusion
+gold = gr.material(	 {0.9, 0.8, 0.4}, 	{0.8, 0.8, 0.4}, 	25, 0.0 , 0)
+gold2 = gr.material( {1.0, 1.0, 0.3},   {1.0, 1.0, 1.0},	25, 0.0, 0)
+grass = gr.material( {0.1, 0.7, 0.1}, 	{0.0, 0.0, 0.0}, 	0,  0.0, 0)
+blue = gr.material(  {0.2, 0.2, 0.9}, 	{0.1, 0.1, 0.5}, 	25, 1e-5, 0)
+glass = gr.material( {0.05, 0.05, 0.05}, {0.7, 0.7, 0.7}, 25, 1.5, 1)			--enable optics
+water = gr.material( {0.05, 0.05, 0.05}, {0.6, 0.6, 0.6}, 25, 1.3333,0)
+red_wall = gr.material( {0.6, 0.2, 0.3}, {0.3, 0.05, 0.05}, 25, 0.0,0)
+green_wall = gr.material( {0.2, 0.6, 0.2}, {0.1, 0.05, 0.5}, 25, 0.0,0)
+blue_wall = gr.material( {0.2, 0.2, 0.6}, {0.1, 0.05, 0.5}, 25, 0.0,0)
+grey_wall = gr.material( {0.6, 0.623, 0.7002}, {0.3, 0.3, 0.3}, 25, 0.0,0)
+reflective_wall = gr.material( {0, 0, 0}, {0.9, 0.9, 0.9}, 25, 1e-10,0)
+white_ceiling = gr.material({0.9, 0.9, 0.9}, {0.5, 0.5, 0.5}, 25, 0.0,0)
+white_surf = gr.material({0.1, 0.1, 0.1}, {0.9, 0.9, 0.9}, 25, 1.0,0)
+mat4  = gr.material({0.7, 0.6, 1.0}, {0.5, 0.4, 0.8}, 25, 0.0,0)			--disable optics
+mat1  = gr.material({0.7, 1.0, 0.7}, {0.5, 0.7, 0.5}, 25, 0.0,0)  		--disable optics
+mat3  = gr.material({1.0, 0.6, 0.1}, {0.5, 0.7, 0.5}, 25, 0.0,0)			--disable optics
+reflective = gr.material({0.0, 0.0, 0.0}, {0.7, 0.7, 0.7}, 25, 0.0,0)		--disable optics and disfusion
 glossy_reflective = {1.0, 10, 0.0, 100}					--glossy reflection
 glossy_refractive = {0.0, 1000, 1.0, 100}					--glossy refraction
-mirror1 = gr.material( {0.2, 0.2, 0.2},   {1.0, 1.0, 1.0},	25, 0.0)
-mirror2 = gr.material( {0.2, 0.2, 0.2},   {1.0, 1.0, 1.0},	25, 0.0)
-glass2 = gr.material( {0.05, 0.05, 0.05}, {0.7, 0.7, 0.7},  25, 1.5)			--enable optics
+mirror1 = gr.material( {0.2, 0.2, 0.2},   {1.0, 1.0, 1.0},	25, 0.0,0)
+mirror2 = gr.material( {0.2, 0.2, 0.2},   {1.0, 1.0, 1.0},	25, 0.0,0)
+glass2 = gr.material( {0.05, 0.05, 0.05}, {0.7, 0.7, 0.7},  25, 1.5,1)
+glass3 = gr.material( {0.05, 0.05, 0.05}, {0.7, 0.7, 0.7},  25, 2.5,1)			--enable optics
 
-marble = gr.material( {0.7, 0.7, 0.7}, {1.0, 1.0, 1.0}, 25, 0.0)
-hardwoodfloor = gr.material({0.7, 0.7, 0.7}, {0.1, 0.1, 0.1}, 25, 0.0)
+marble = gr.material( {0.7, 0.7, 0.7}, {1.0, 1.0, 1.0}, 25, 0.0,0)
+hardwoodfloor = gr.material({0.7, 0.7, 0.7}, {0.1, 0.1, 0.1}, 25, 0.0,0)
 
 
 
@@ -43,19 +45,19 @@ scene = gr.node('scene')
 -- reflectiveSphere3:scale(2, 2, 2)
 -- reflectiveSphere3:translate(6, -8, -5)
 
-transparentSphere = gr.sphere('transparentSphere')
-scene:add_child(transparentSphere)
-transparentSphere:set_material(glass2)
--- transparentSphere:set_glossy({0.0, 10, 1.0, 1000})
-transparentSphere:scale(3, 3, 3)
-transparentSphere:translate(0, -3, 4)
-
--- transparentSphere2 = gr.sphere('transparentSphere')
--- scene:add_child(transparentSphere2)
--- transparentSphere2:set_material(white_surf)
+-- transparentSphere = gr.sphere('transparentSphere')
+-- scene:add_child(transparentSphere)
+-- transparentSphere:set_material(glass3)
 -- -- transparentSphere:set_glossy({0.0, 10, 1.0, 1000})
--- transparentSphere2:scale(3,3,3)
--- transparentSphere2:translate(0, -3, 3)
+-- transparentSphere:scale(1, 1, 1)
+-- transparentSphere:translate(0, -3, 4)
+
+transparentSphere2 = gr.sphere('transparentSphere')
+scene:add_child(transparentSphere2)
+transparentSphere2:set_material(glass2)
+-- transparentSphere:set_glossy({0.0, 10, 1.0, 1000})
+transparentSphere2:scale(3,3,3)
+transparentSphere2:translate(0, 0, 8)
 
 -- transparentCylinder = gr.sphere('transparentCylinder')
 -- transparentSphere:add_child(transparentCylinder)
@@ -92,8 +94,8 @@ transparentSphere:translate(0, -3, 4)
 
 floor = gr.plane('floor')
 scene:add_child(floor)
-floor:set_material(white_ceiling)
--- floor:set_texture(1, "Assets/hardwoodfloor.png")
+floor:set_material(grey_wall)
+floor:set_texture("Assets/wood.png")
 -- floor:set_glossy({0.2, 10000, 0.0, 100})
 floor:scale(10, 10, 30)
 floor:translate(0, -10, 0)
@@ -101,7 +103,7 @@ floor:translate(0, -10, 0)
 backwall = gr.plane('backwall')
 scene:add_child(backwall)
 backwall:set_material(grey_wall)
--- backwall:set_texture(1, "Assets/brickwall.png")
+backwall:set_texture("Assets/doom.png")
 backwall:rotate('X', 90)
 backwall:scale(10, 10, 1)
 backwall:translate(0, 0, -10)
