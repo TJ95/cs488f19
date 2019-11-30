@@ -1,15 +1,18 @@
 // Fall 2019
 
 #include <glm/ext.hpp>
-using namespace glm;
-
+#include <glm/gtx/io.hpp>
 #include "A4.hpp"
+
 using namespace std;
+using namespace glm;
 
 #define DISTANCE 10.0
 #define RECURSION_DEPTH 5
 #define EPSILON 0.0001
-#include <glm/gtx/io.hpp>
+#define ANTIALIASING
+#define SS_RAYCOUNT 50 // softshadowing
+#define GLOSSY_RAYCOUNT 0 // glossy reflection
 
 static SceneNode *Scene;
 static glm::vec3 aColor;
@@ -68,9 +71,20 @@ void A4_Render(
 	auto big_trans = compute_device_world_transformation(w, h, xi, yi, DISTANCE, eye, view, up);
 	
 	// if (ANTIALIASING) {
+	cout << "--CONFIGURATIONS--" << endl;
 #ifdef ANTIALIASING
-	cout << "!anti-aliasing active!" << endl;
+	cout << "Anti-aliasing : ACTIVE" << endl;
+#else
+	cout << "Anti-aliasing : INACTIVE" << endl;
 #endif
+	cout << "Camera Distance: " << DISTANCE << endl;
+	cout << "Recursion Depth: " << RECURSION_DEPTH << endl;
+	if (SS_RAYCOUNT) {
+		cout << "Softshadowing rays: " << SS_RAYCOUNT << endl;
+	}
+	if (GLOSSY_RAYCOUNT) {
+		cout << "Glossy effect rays: " << GLOSSY_RAYCOUNT << endl;
+	}
 	// }
 	// rendering code
 	// for (uint y = 0; y < h; ++y) {
@@ -79,7 +93,7 @@ void A4_Render(
 	// 	for (uint x = 0; x < w; ++x) {
 	std::size_t max = w * h;
 	std::size_t cores = std::thread::hardware_concurrency();
-	cout << "Core usage: " << cores << endl;
+	cout << "Logical core usage: " << cores << endl;
 	std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 	volatile std::atomic<std::size_t> count(0);
 	{
@@ -201,11 +215,10 @@ void A4_Render(
 				}
 			})
 			);
-		} //sahdjhajsdh
+		} // TODO
 	}
-		std::chrono::system_clock::time_point finish = std::chrono::system_clock::now();
-
-		std::cout << "Time took to complete (seconds): " << std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count() / 1000.0 << std::endl;
+		chrono::system_clock::time_point finish = chrono::system_clock::now();
+		cout << endl << "Image rendered in: " << chrono::duration_cast<chrono::milliseconds>(finish - start).count() / 1000.0 << " seconds" <<endl;
 }
 
 dmat4 compute_device_world_transformation (double w, double h
@@ -265,14 +278,14 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 if (int_primary.mat->refractive_index != 0) {
 	// reflectance factor
 	//double reflectance = 0.3;
-	// double reflectance;
-	// if (int_primary.mat->transparency == 1) {
-	// 	reflectance = fresneleffect(int_primary.received_ray, int_primary);
-	// } else {
-	// 	reflectance = int_primary.mat->refractive_index;
-	// }
-	double reflectance = fresneleffect(int_primary.received_ray, int_primary);
-	if (int_primary.mat->refractive_index == 1.0) reflectance = 1.0;
+	double reflectance;
+	if (int_primary.mat->transparency == 1) {
+		reflectance = fresneleffect(int_primary.received_ray, int_primary);
+	} else {
+		reflectance = int_primary.mat->refractive_index;
+	}
+	// double reflectance = fresneleffect(int_primary.received_ray, int_primary);
+	// if (int_primary.mat->refractive_index == 1.0) reflectance = 1.0;
 
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
 	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
@@ -300,47 +313,65 @@ if (int_primary.mat->refractive_index != 0) {
 		glm::dvec4 point = int_primary.received_ray.origin + int_primary.received_ray.dir * int_primary.t;
 		glm::dvec4 light_direction = glm::dvec4(light->position, 1) - point;
 		
-		// shadow
-		auto lightPosition =  light->position;			
-		glm::dvec4 shadow_ray_direction = glm::dvec4(lightPosition, 1) - point;
-		ray shadow_ray = ray(point + EPSILON * glm::normalize(shadow_ray_direction), shadow_ray_direction);
-			
-		double shadow_ray_length = glm::length(shadow_ray_direction);
-			
-		intersection shadow_intersect = hit_detection(shadow_ray, Scene);
-		
-		if (shadow_intersect.hit && glm::length(shadow_ray_direction * shadow_intersect.t) < shadow_ray_length) {
-
-		} else {
-			auto light_ray = glm::normalize(shadow_ray_direction);
-			auto normal = glm::normalize(int_primary.normal);
-			auto cosineTheta = std::max(glm::dot(glm::dvec3(normal), glm::dvec3(light_ray)), 0.0);
-			auto kd = int_primary.mat->m_kd;	
-
-			// Texture Mapping
-			Texture *texture = int_primary.textureInfo();
-			if (texture) {
-				double u = int_primary.primitive_int_point.x;
-				double v = int_primary.primitive_int_point.z;
-				kd = texture->color(u, v);
-				//std::cout << "got here " << std::endl;
-			}
-
-			if (glm::length(kd) != 0) {
-				// length of the light
-				double length = int_primary.t * glm::length(int_primary.received_ray.dir);
-				// Calculate diffused color
-				colorSum += kd * cosineTheta * light->colour / (light->falloff[0] +
-																light->falloff[1] * length +
-																light->falloff[2] * length * length);	
-			}	
-			if (glm::length(int_primary.mat->m_ks) > 0) {
-				cosineTheta = std::max(glm::dot(Rr, glm::normalize(glm::dvec3(light_direction))), 0.0);
-				auto phongCoeff = std::pow(cosineTheta, int_primary.mat->m_shininess);	
-				colorSum += phongCoeff * int_primary.mat->m_ks * light->colour;
-			}
+		// soft shadowing
+		int num_rays = 1;
+		if (light->usingALight()) {
+			num_rays = SS_RAYCOUNT;
 		}
-		color += colorSum;
+
+		// shadow
+		for (int i = 0; i < num_rays; i++) {
+			//auto lightPosition =  light->position;
+			vec3 lightPosition;	
+			if (light->usingALight()) {
+				lightPosition = vec3(light->randomPoint());
+			} else {
+				lightPosition = light->position;
+			}
+
+			glm::dvec4 shadow_ray_direction = glm::dvec4(lightPosition, 1) - point;
+			ray shadow_ray = ray(point + EPSILON * glm::normalize(shadow_ray_direction), shadow_ray_direction);
+				
+			double shadow_ray_length = glm::length(shadow_ray_direction);
+				
+			intersection shadow_intersect = hit_detection(shadow_ray, Scene);
+			
+			if (shadow_intersect.hit && glm::length(shadow_ray_direction * shadow_intersect.t) < shadow_ray_length) {
+
+			} else {
+				auto light_ray = glm::normalize(shadow_ray_direction);
+				auto normal = glm::normalize(int_primary.normal);
+				auto cosineTheta = std::max(glm::dot(glm::dvec3(normal), glm::dvec3(light_ray)), 0.0);
+				auto kd = int_primary.mat->m_kd;	
+
+				// Texture Mapping
+				Texture *texture = int_primary.textureInfo();
+				if (texture) {
+					double u = int_primary.primitive_int_point.x;
+					double v = int_primary.primitive_int_point.z;
+					kd = texture->color(u, v);
+					//std::cout << "got here " << std::endl;
+				}
+
+				if (glm::length(kd) != 0) {
+					// length of the light
+					double length = int_primary.t * glm::length(int_primary.received_ray.dir);
+					// Calculate diffused color
+					colorSum += kd * cosineTheta * light->colour / (light->falloff[0] +
+																	light->falloff[1] * length +
+																	light->falloff[2] * length * length);	
+				}	
+				if (glm::length(int_primary.mat->m_ks) > 0) {
+					cosineTheta = std::max(glm::dot(Rr, glm::normalize(glm::dvec3(light_direction))), 0.0);
+					auto phongCoeff = std::pow(cosineTheta, int_primary.mat->m_shininess);	
+					colorSum += phongCoeff * int_primary.mat->m_ks * light->colour;
+				}
+			}
+			if (light->usingALight()) {
+				colorSum = colorSum / SS_RAYCOUNT;
+			}
+			color += colorSum;
+		}
 	}
 
 	//color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);

@@ -342,6 +342,32 @@ int gr_light_cmd(lua_State* L)
   return 1;
 }
 
+extern "C" 
+int gr_spherical_light_cmd(lua_State *L)
+{
+  GRLUA_DEBUG_CALL;
+
+  gr_light_ud *data = (gr_light_ud *)lua_newuserdata(L, sizeof(gr_light_ud));
+  data->light = 0;
+
+  glm::vec3 color;
+  glm::vec3 position;
+  glm::vec3 falloff;
+
+  get_tuple(L, 1, &position[0], 3);
+  get_tuple(L, 2, &color[0], 3);
+  double radius = luaL_checknumber(L, 4);
+
+  data->light = new SphericalLight(color, position, radius);
+  get_tuple(L, 3, data->light->falloff, 3);
+
+  luaL_newmetatable(L, "gr.light");
+
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
 // Render a scene
 extern "C"
 int gr_render_cmd(lua_State* L)
@@ -575,21 +601,21 @@ int gr_node_gc_cmd(lua_State* L)
 // declared.
 // If you want to add a new non-member function, add it HERE.
 static const luaL_Reg grlib_functions[] = {
-  {"node", gr_node_cmd},
-  {"sphere", gr_sphere_cmd},
-  {"joint", gr_joint_cmd},
-  {"material", gr_material_cmd},
-  // New for assignment 4
-  {"cube", gr_cube_cmd},
-  {"plane", gr_plane_cmd},
-  // {"cylinder", gr_cylinder_cmd},
-  {"nh_sphere", gr_nh_sphere_cmd},
-  {"nh_box", gr_nh_box_cmd},
-  {"mesh", gr_mesh_cmd},
-  {"light", gr_light_cmd},
-  {"render", gr_render_cmd},
-  {0, 0}
-};
+    {"node", gr_node_cmd},
+    {"sphere", gr_sphere_cmd},
+    {"joint", gr_joint_cmd},
+    {"material", gr_material_cmd},
+    // New for assignment 4
+    {"cube", gr_cube_cmd},
+    {"plane", gr_plane_cmd},
+    // {"cylinder", gr_cylinder_cmd},
+    {"nh_sphere", gr_nh_sphere_cmd},
+    {"nh_box", gr_nh_box_cmd},
+    {"mesh", gr_mesh_cmd},
+    {"light", gr_light_cmd},
+    {"sphericallight", gr_spherical_light_cmd},
+    {"render", gr_render_cmd},
+    {0, 0}};
 
 // This is where all the member functions for "gr.node" objects are
 // declared. Since all the other objects (e.g. materials) are so

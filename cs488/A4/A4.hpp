@@ -14,8 +14,6 @@
 #include <future>
 #include <chrono>
 
-#define ANTIALIASING
-
 void A4_Render(
 		// What to render
 		SceneNode * root,
