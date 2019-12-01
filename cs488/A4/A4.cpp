@@ -564,8 +564,6 @@ vector<dvec3> getPerturbed(dvec3 R, dvec3 normal, double exp, int size) {
 
 	vector<dvec3> rays;
 	while (rays.size() < size) {
-		//cout << "looping" << endl;
-		//cout << "rays.size: " << rays.size() << endl; 
 		dvec3 R_prim = perturb_ray(R, exp);
 		double product = glm::dot(normal, R_prim);
 		//cout << product << endl;
