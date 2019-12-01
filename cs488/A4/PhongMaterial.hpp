@@ -11,7 +11,10 @@ public:
   PhongMaterial(const glm::vec3& kd, const glm::vec3& ks, double shininess);
   // additional ctors to create phong mats with new attributes
   PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind);
-  PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind, const int trans);
+  PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks,
+                double shininess, double ref_ind, const int trans);
+  PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks,
+                double shininess, double ref_ind, const int trans, const glm::vec4 &glossy);
   PhongMaterial(const glm::vec3 &kd, const glm::vec3 &ks, double shininess, 
                 double ref_ind, double extinct);
   PhongMaterial(const glm::vec3 &kd,
@@ -19,8 +22,8 @@ public:
                 double shininess,
                 double refractive_ind,
                 double extinct_coeff,
-                const glm::vec4 &glossy
-  );
+                const glm::vec4 &glossy);
+
   virtual ~PhongMaterial();
   // overloading the = operator for both direct access and pointer calls
   PhongMaterial &operator=(const PhongMaterial &other);

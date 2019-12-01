@@ -13,6 +13,8 @@
 #include <thread>
 #include <future>
 #include <chrono>
+#include <vector>
+#include <random>
 
 void A4_Render(
 		// What to render
@@ -46,7 +48,12 @@ ray castRay(glm::dvec4 p0, glm::dvec4 p1);
 glm::dvec3 directLight(const std::list<Light*> & lights, const intersection & int_primary, int counter);
 glm::dvec3 backgroundColor(int x, int y);
 Hit compute_ray_color(const ray & r, const std::list<Light*> & lights, int counter);
-void printProgress (float percentage);
-
+//void printProgress (float percentage);
+// handle light refraction
 ray refract(const ray &ray, const intersection &inter);
+// simulate the fresnel effect where the reflectance depends on the ior
 double fresneleffect(const ray &r, const intersection &inter);
+// perturb the direction of a ray by
+glm::dvec3 perturb_ray(dvec3 R, double exp);
+// get a vector of total perturbed rays from an area light source
+vector<dvec3> getPerturbed(dvec3 R, dvec3 normal, double exp, int size);

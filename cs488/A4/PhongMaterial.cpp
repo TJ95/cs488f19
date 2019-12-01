@@ -41,6 +41,15 @@ PhongMaterial::PhongMaterial(
 }
 
 PhongMaterial::PhongMaterial(
+	const glm::vec3 &kd, const glm::vec3 &ks,
+	double shininess, double ref_ind, const int trans, const glm::vec4 &glossy)
+	: m_kd(kd), m_ks(ks), m_shininess(shininess), refractive_index(ref_ind), transparency(trans)
+{
+	extinction_coefficient = 0.0;
+	glossy_coef = glossy;
+}
+
+PhongMaterial::PhongMaterial(
 	const glm::vec3 &kd, const glm::vec3 &ks, double shininess, double ref_ind, double ex)
 	: m_kd(kd), m_ks(ks), m_shininess(shininess), refractive_index(ref_ind), extinction_coefficient(ex)
 {

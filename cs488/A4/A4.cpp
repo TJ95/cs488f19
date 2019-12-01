@@ -8,11 +8,11 @@ using namespace std;
 using namespace glm;
 
 #define DISTANCE 10.0
-#define RECURSION_DEPTH 5
+#define RECURSION_DEPTH 10
 #define EPSILON 0.0001
 #define ANTIALIASING
-#define SS_RAYCOUNT 50 // softshadowing
-#define GLOSSY_RAYCOUNT 0 // glossy reflection
+#define SS_RAYCOUNT 10 // softshadowing
+#define GLOSSY_RAYCOUNT 50 // glossy reflection
 
 static SceneNode *Scene;
 static glm::vec3 aColor;
@@ -373,9 +373,25 @@ if (int_primary.mat->refractive_index != 0) {
 			color += colorSum;
 		}
 	}
-
 	//color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);
-
+	// glossy reflection
+	if (GLOSSY_RAYCOUNT > 0 && counter <= 5 && int_primary.mat->glossy_coef.x > 0)
+	{
+		//cout << "got here" << endl;
+		//cout << int_primary.mat->glossy_coef << endl;
+		glm::dvec3 reflected_col;
+		vector<dvec3> pertubed_incident_rays = getPerturbed(Rr, dvec3(int_primary.normal), int_primary.mat->glossy_coef.y, GLOSSY_RAYCOUNT);
+		for (auto dir : pertubed_incident_rays) {
+			//cout << "looping" << endl;
+			ray reflected(point + EPSILON * glm::dvec4(dir, 0), dvec4(dir, 0));
+			Hit ghit;
+			ghit = compute_ray_color(reflected, lights, counter + 1);
+			reflected_col += ghit.color;
+		}
+		reflected_col = reflected_col / double(GLOSSY_RAYCOUNT);
+		//cout << reflected_col << endl;
+		color += int_primary.mat->glossy_coef.x * reflected_col * dvec3(int_primary.mat->m_ks);
+	}
 	return color;
 }
 
@@ -397,8 +413,7 @@ Hit compute_ray_color(const ray & r, const std::list<Light*> & lights, int count
 	return Hit{primary_intersect.hit, color};
 }
 
-dvec3 backgroundColor(int x, int y)
-{	
+dvec3 backgroundColor(int x, int y) {	
 	glm::dvec3 color(0, 0, 0);
 	color.r += 0;
 	color.g += 0;
@@ -517,3 +532,47 @@ double fresneleffect(const ray &r, const intersection &inter){
 // 	}
 // 	return kr;
 // }
+
+dvec3 perturb_ray(dvec3 R, double exp) {
+
+	R = normalize(R);
+	//cout << "exponent: " << exp << endl;
+
+	dvec3 e0{0, 1, 0};
+	dvec3 e1{0, 0, 1};
+
+	dvec3 W = R;
+	dvec3 U = glm::cross(W, e0);
+	if (length(U) < 0.1) { U = cross(W, e1); }
+	dvec3 V = cross(W, U);
+
+	// generate random value
+	std::random_device rand;
+	std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
+	double p = distribution(rand) * 2 * glm::pi<double>();
+	double cos_t = pow(distribution(rand), 1.0 / (exp + 1));
+	double sin_t = sqrt(1 - cos_t *cos_t);
+	double cos_p = cos(p);
+	double sin_p = sin(p); 
+	// r' = r+u'u+v'v
+	dvec3 A = W*cos_t + U*cos_p*sin_t + V*sin_p*sin_t;
+	return A;
+}
+
+vector<dvec3> getPerturbed(dvec3 R, dvec3 normal, double exp, int size) {
+
+	vector<dvec3> rays;
+	while (rays.size() < size) {
+		//cout << "looping" << endl;
+		//cout << "rays.size: " << rays.size() << endl; 
+		dvec3 R_prim = perturb_ray(R, exp);
+		double product = glm::dot(normal, R_prim);
+		//cout << product << endl;
+		if (product > 0) {
+			// the ray is visible
+			rays.push_back(R_prim);
+		}
+	}
+	return rays;
+}
