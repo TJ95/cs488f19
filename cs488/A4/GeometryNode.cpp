@@ -48,7 +48,7 @@ intersection GeometryNode::intersect(const ray & ray, std::list<glm::mat4> trans
 	class ray new_ray(origin, dir);
 	
 	intersection i = m_primitive->intersect(new_ray);
-	
+
 	if (i.hit) {
 		// get the materials as usual
 		i.mat = (PhongMaterial *)m_material;

@@ -52,6 +52,7 @@
 #include "Mesh.hpp"
 #include "GeometryNode.hpp"
 #include "JointNode.hpp"
+#include "csg_node.hpp"
 #include "Primitive.hpp"
 #include "Material.hpp"
 #include "PhongMaterial.hpp"
@@ -245,7 +246,7 @@ int gr_nh_box_cmd(lua_State* L)
   return 1;
 }
 
-// Create a plane node
+// Create a Plane node
 extern "C"
 int gr_plane_cmd(lua_State* L)
 {
@@ -263,23 +264,84 @@ int gr_plane_cmd(lua_State* L)
   return 1;
 }
 
-// // Create a cylinder node
-// extern "C"
-// int gr_cylinder_cmd(lua_State* L)
-// {
-//     GRLUA_DEBUG_CALL;
+// Create a Cone node
+extern "C"
+int gr_cone_cmd(lua_State* L)
+{
+    GRLUA_DEBUG_CALL;
     
-//     gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
-//     data->node = 0;
+    gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
+    data->node = 0;
     
-//     const char* name = luaL_checkstring(L, 1);
-//     data->node = new GeometryNode(name, new Cylinder());
+    const char* name = luaL_checkstring(L, 1);
+    data->node = new GeometryNode(name, new Cone());
     
-//     luaL_getmetatable(L, "gr.node");
-//     lua_setmetatable(L, -2);
+    luaL_getmetatable(L, "gr.node");
+    lua_setmetatable(L, -2);
     
-//     return 1;
-// }
+    return 1;
+}
+
+// Create a non-hierarchical Sphere node
+extern "C"
+int gr_nh_torus_cmd(lua_State* L)
+{
+  GRLUA_DEBUG_CALL;
+  
+  gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
+  data->node = 0;
+
+  const char* name = luaL_checkstring(L, 1);
+
+  glm::vec3 pos;
+  get_tuple(L, 2, &pos[0], 3);
+
+  double oradius = luaL_checknumber(L, 3);
+  double iradius = luaL_checknumber(L, 4);
+
+  data->node = new GeometryNode(name, new NonhierTorus(pos, oradius, iradius));
+
+  luaL_getmetatable(L, "gr.node");
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
+// Create a Sphere node
+extern "C"
+int gr_torus_cmd(lua_State* L)
+{
+  GRLUA_DEBUG_CALL;
+  
+  gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
+  data->node = 0;
+  
+  const char* name = luaL_checkstring(L, 1);
+  data->node = new GeometryNode( name, new Torus() );
+
+  luaL_getmetatable(L, "gr.node");
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
+// Create a Cone node
+extern "C"
+int gr_cylinder_cmd(lua_State* L)
+{
+    GRLUA_DEBUG_CALL;
+    
+    gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
+    data->node = 0;
+    
+    const char* name = luaL_checkstring(L, 1);
+    data->node = new GeometryNode(name, new Cylinder());
+    
+    luaL_getmetatable(L, "gr.node");
+    lua_setmetatable(L, -2);
+    
+    return 1;
+}
 
 // Create a polygonal Mesh node
 extern "C"
@@ -580,6 +642,7 @@ int gr_node_set_texture_cmd(lua_State *L)
     
     gr_node_ud* selfdata = (gr_node_ud*)luaL_checkudata(L, 1, "gr.node");
     luaL_argcheck(L, selfdata != 0, 1, "Node expected");
+
     GeometryNode* self = dynamic_cast<GeometryNode*>(selfdata->node);
     luaL_argcheck(L, self != 0, 1, "Geometry node expected");
     
@@ -589,6 +652,34 @@ int gr_node_set_texture_cmd(lua_State *L)
     self->m_texture = texture;
     
     return 0;
+}
+
+// bump map for a node
+extern "C" 
+int gr_node_set_bumpmap_cmd(lua_State *L) {
+  GRLUA_DEBUG_CALL;
+
+  gr_node_ud *selfdata = (gr_node_ud *)luaL_checkudata(L, 1, "gr.node");
+  luaL_argcheck(L, selfdata != 0, 1, "Node expected");
+
+  GeometryNode *self = dynamic_cast<GeometryNode *>(selfdata->node);
+  luaL_argcheck(L, self != 0, 1, "Geometry node expected");
+
+  std::string fname = luaL_optstring(L, 2, "Assets/Basketball_bump.png");
+  Bumpmap *bm = nullptr;
+  bm = new Bumpmap(fname);
+  self->m_bumpmap = bm;
+
+  return 0;
+}
+
+// CSG
+// UNION
+int gr_csg_union_cmd(lua_State* L)
+{
+  
+
+  return 1;
 }
 
 // Garbage collection function for lua.
@@ -623,13 +714,17 @@ static const luaL_Reg grlib_functions[] = {
     // New for assignment 4
     {"cube", gr_cube_cmd},
     {"plane", gr_plane_cmd},
-    // {"cylinder", gr_cylinder_cmd},
+    {"cone", gr_cone_cmd},
+    {"cylinder", gr_cylinder_cmd},
+    {"torus", gr_torus_cmd},
+    {"nh_torus", gr_nh_torus_cmd},
     {"nh_sphere", gr_nh_sphere_cmd},
     {"nh_box", gr_nh_box_cmd},
     {"mesh", gr_mesh_cmd},
     {"light", gr_light_cmd},
     {"sphericallight", gr_spherical_light_cmd},
     {"render", gr_render_cmd},
+    {"csg_union", gr_csg_union_cmd},
     {0, 0}};
 
 // This is where all the member functions for "gr.node" objects are
@@ -649,6 +744,7 @@ static const luaL_Reg grlib_node_methods[] = {
     {"add_child", gr_node_add_child_cmd},
     {"set_material", gr_node_set_material_cmd},
     {"set_texture", gr_node_set_texture_cmd},
+    {"set_bumpmap", gr_node_set_bumpmap_cmd},
     {"scale", gr_node_scale_cmd},
     {"rotate", gr_node_rotate_cmd},
     {"translate", gr_node_translate_cmd},

@@ -8,6 +8,7 @@
 #include "Light.hpp"
 #include "Image.hpp"
 #include "Texture.hpp"
+#include "Primitive.hpp"
 #include "ray.hpp"
 #include "intersection.hpp"
 #include <thread>

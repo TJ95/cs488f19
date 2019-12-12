@@ -7,12 +7,14 @@
 using namespace std;
 using namespace glm;
 
-#define DISTANCE 10.0
-#define RECURSION_DEPTH 10
-#define EPSILON 0.0001
 #define ANTIALIASING
-#define SS_RAYCOUNT 10 // softshadowing
-#define GLOSSY_RAYCOUNT 50 // glossy reflection
+#define AA_MODE 1
+#define SS_RAYCOUNT 50 // softshadowing
+#define GLOSSY_RAYCOUNT 15 // glossy reflection
+#define DISTANCE 10.0
+#define RECURSION_DEPTH 5
+#define EPSILON 0.0001
+#define foco_range  5
 
 static SceneNode *Scene;
 static glm::vec3 aColor;
@@ -85,6 +87,10 @@ void A4_Render(
 	if (GLOSSY_RAYCOUNT) {
 		cout << "Glossy effect rays: " << GLOSSY_RAYCOUNT << endl;
 	}
+	if (foco_range) {
+		//int temp = foco_range;
+		cout << "focus range: " << foco_range << endl;
+	}
 	// }
 	// rendering code
 	// for (uint y = 0; y < h; ++y) {
@@ -111,8 +117,35 @@ void A4_Render(
 					double y = index / w;
 					
 #ifdef ANTIALIASING
-					//if (ANTIALIASING)
-					//{
+	if (AA_MODE == 0) {
+		glm::dvec3 color(0, 0, 0);
+		int aa_sample_count = 48;
+        int backgroundColorTime = 0;
+        auto eyePoint = world_coords(x, y, big_trans);
+        float sample_range = 1;
+        for(int i = 0; i < aa_sample_count; i++){
+			std::random_device rand;
+			std::uniform_real_distribution<double> distribution(-1.0,1.0);
+			
+			auto curPixel = world_coords(x+distribution(rand)*sample_range, y+distribution(rand)*sample_range, big_trans);
+			curPixel = 0.5 * curPixel + 0.5 * eyePoint;
+			ray r = ray(glm::dvec4(eye, 1), curPixel - glm::dvec4(eye, 1));
+			Hit currentPixelColor = compute_ray_color(r, lights, 0);
+
+			if(currentPixelColor.hit){
+			color += glm::clamp(currentPixelColor.color, 0.0, 1.0);
+			} else {
+			++backgroundColorTime;
+			}
+        }
+        color += backgroundColor(x, y) * backgroundColorTime;
+    	color = color / aa_sample_count; // average the color.
+
+		image(x, y, 0) = color.r;
+		image(x, y, 1) = color.g;
+		image(x, y, 2) = color.b;
+	} else if (AA_MODE == 1) {
+
 					auto p_world = world_coords(x, y, big_trans);
 					auto p_world1 = world_coords(x + 1, y, big_trans);
 					auto p_world2 = world_coords(x - 1, y, big_trans);
@@ -186,11 +219,46 @@ void A4_Render(
 						color += backgroundColor(x, y);
 					}
 
-					color = color / 5.0; // average the color.
+					color = color / 5; // average the color.
 
 					image(x, y, 0) = color.r;
 					image(x, y, 1) = color.g;
 					image(x, y, 2) = color.b;
+	} else if (AA_MODE == 2) {
+		// simulate depth of field
+		glm::dvec3 color(0, 0, 0);
+		int dof_sample_count = 32;
+		float sample_range = 0.4;
+		double foco_r = foco_range;
+        int bgcolor = 0;
+		auto cur_pixel = world_coords(x, y, big_trans);
+        auto dir_vector = cur_pixel-dvec4(eye,1);
+		auto foco_point = dvec4(eye,1) + dir_vector * foco_r;
+        for(int i = 0; i < dof_sample_count; i++){
+			std::random_device rand;
+			std::uniform_real_distribution<double> distribution(-1.0,1.0);
+
+			dvec4 sample_origin = dvec4(eye, 1);
+			sample_origin.x += distribution(rand)*sample_range;
+			sample_origin.y += distribution(rand)*sample_range;
+			
+			//curPixel = 0.5 * curPixel + 0.5 * foco_point;
+			ray r = ray(sample_origin, foco_point - sample_origin);
+			Hit currentPixelColor = compute_ray_color(r, lights, 0);
+
+			if(currentPixelColor.hit){
+			color += glm::clamp(currentPixelColor.color, 0.0, 1.0);
+			} else {
+			++bgcolor;
+			}
+        }
+        color += backgroundColor(x, y) * bgcolor;
+    	color = color / dof_sample_count; // average the color.
+
+		image(x, y, 0) = color.r;
+		image(x, y, 1) = color.g;
+		image(x, y, 2) = color.b;
+	}
 #else			//} else {
 					auto p_world = world_coords(x, y, big_trans);
 					ray r = castRay(dvec4(eye, 1), p_world);
@@ -275,6 +343,21 @@ dvec3 directLight(const std::list<Light*> & lights, const intersection & int_pri
 	}
 
 	glm::dvec4 point = int_primary.received_ray.origin + int_primary.received_ray.dir * int_primary.t;
+
+	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
+	Bumpmap* bump = int_primary.bumpmapInfo();
+	if (bump) {
+		// TODO
+		if (int_primary.int_prim_type == P_SPHERE) {
+			// TODO
+			dvec3 bcenter = int_primary.spos;
+			N = bump->bumper_sphere({int_primary.normal.x,int_primary.normal.y, int_primary.normal.z}, bcenter, int_primary.primitive_int_point);
+			//N = {temp.x, temp.y, temp.z};
+		} else if (int_primary.int_prim_type == P_PLANE) {
+			// TODO
+		}
+	}
+
 if (int_primary.mat->refractive_index != 0) {
 	// reflectance factor
 	//double reflectance = 0.3;
@@ -288,7 +371,7 @@ if (int_primary.mat->refractive_index != 0) {
 	// if (int_primary.mat->refractive_index == 1.0) reflectance = 1.0;
 
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
-	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
+	//glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
 	glm::dvec3 Rr = Ri - 2.0 * N * (glm::dot(Ri, N));
 
 	dvec4 Rr_dir = dvec4(glm::normalize(Rr), 0);
@@ -304,9 +387,25 @@ if (int_primary.mat->refractive_index != 0) {
 	}
 	color += reflectance * int_primary.mat->m_ks * glm::vec3(hc.color);
 }
+	
 	glm::dvec3 Ri = glm::normalize(glm::dvec3(int_primary.received_ray.dir));
-	glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
+
+	// glm::dvec3 N = glm::normalize(glm::dvec3(int_primary.normal));
+	// Bumpmap* bump = int_primary.bumpmapInfo();
+	// if (bump) {
+	// 	// TODO
+	// 	if (int_primary.int_prim_type == P_SPHERE) {
+	// 		// TODO
+	// 		dvec3 bcenter = int_primary.spos;
+	// 		N = bump->bumper_sphere({int_primary.normal.x,int_primary.normal.y, int_primary.normal.z}, bcenter, int_primary.primitive_int_point);
+	// 		//N = {temp.x, temp.y, temp.z};
+	// 	} else if (int_primary.int_prim_type == P_PLANE) {
+	// 		// TODO
+	// 	}
+	// }
+
 	glm::dvec3 Rr = Ri - 2.0 * N * (glm::dot(Ri, N));
+
 	// calculate diffused color
 	for (auto light : lights) {
 		glm::dvec3 colorSum {0, 0, 0};
@@ -337,7 +436,10 @@ if (int_primary.mat->refractive_index != 0) {
 			intersection shadow_intersect = hit_detection(shadow_ray, Scene);
 			
 			if (shadow_intersect.hit && glm::length(shadow_ray_direction * shadow_intersect.t) < shadow_ray_length) {
-
+				// if (int_primary.mat->transparency == 1) {
+						
+					
+				// }
 			} else {
 				auto light_ray = glm::normalize(shadow_ray_direction);
 				auto normal = glm::normalize(int_primary.normal);
@@ -347,9 +449,15 @@ if (int_primary.mat->refractive_index != 0) {
 				// Texture Mapping
 				Texture *texture = int_primary.textureInfo();
 				if (texture) {
-					double u = int_primary.primitive_int_point.x;
-					double v = int_primary.primitive_int_point.z;
-					kd = texture->color(u, v);
+					if (int_primary.int_prim_type == P_PLANE) {
+						double u = int_primary.primitive_int_point.x;
+						double v = int_primary.primitive_int_point.z;
+						kd = texture->color(u, v);
+					} else if (int_primary.int_prim_type == P_SPHERE) {
+						//double sp_r = int_primary.sradius;
+						dvec3 center = int_primary.spos;
+						kd = texture->color_sphere(center, int_primary.primitive_int_point);
+					}
 					//std::cout << "got here " << std::endl;
 				}
 
@@ -388,7 +496,7 @@ if (int_primary.mat->refractive_index != 0) {
 			ghit = compute_ray_color(reflected, lights, counter + 1);
 			reflected_col += ghit.color;
 		}
-		reflected_col = reflected_col / double(GLOSSY_RAYCOUNT);
+		reflected_col = reflected_col / pertubed_incident_rays.size();
 		//cout << reflected_col << endl;
 		color += int_primary.mat->glossy_coef.x * reflected_col * dvec3(int_primary.mat->m_ks);
 	}
@@ -563,13 +671,19 @@ dvec3 perturb_ray(dvec3 R, double exp) {
 vector<dvec3> getPerturbed(dvec3 R, dvec3 normal, double exp, int size) {
 
 	vector<dvec3> rays;
+	int counter = 0;
+	int upbound = size*5;
 	while (rays.size() < size) {
 		dvec3 R_prim = perturb_ray(R, exp);
 		double product = glm::dot(normal, R_prim);
-		//cout << product << endl;
+		//cout << counter << ":" << upbound << endl;
 		if (product > 0) {
 			// the ray is visible
 			rays.push_back(R_prim);
+		}
+		counter++;
+		if (counter>upbound) {
+			break;
 		}
 	}
 	return rays;

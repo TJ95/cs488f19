@@ -11,6 +11,7 @@ Primitive::~Primitive()
 
 intersection Primitive::intersect(const ray &ray)
 {
+    //cout << "haha" << endl;
     intersection result(ray, 0);
     return result;
 }
@@ -98,6 +99,9 @@ intersection NonhierSphere::intersect(const ray & ray) {
     glm::dvec4 normal = glm::normalize(int_point - center);
     result.normal = normal;
     result.primitive_int_point = int_point;
+    result.int_prim_type = P_SPHERE;
+    result.sradius = m_radius;
+    result.spos = (dvec3)m_pos;
     //if (result.hit) cout << "hit!!" << endl;
     return result;
 }
@@ -270,10 +274,12 @@ intersection NonhierBox::intersect(const ray &ray){
         auto int_point = ray.origin + ray.dir * result.t;
         result.normal = dvec4(normal, 0);
         result.primitive_int_point = int_point;
+        //result.int_prim_type = P_CUBE;
     }
 
     if (result.hit) {
         result.primitive_int_point = result.received_ray.origin + result.received_ray.dir * result.t;
+        result.int_prim_type = P_CUBE;
     }
 
     return result;
@@ -295,9 +301,346 @@ intersection Plane::intersect(const ray &ray)
             intersect.normal = glm::dvec4(0, 1, 0, 0);
         }
         intersect.primitive_int_point = hitPoint;
+        intersect.int_prim_type = P_PLANE;
     } else {
         intersect.hit = false;
     }
     
     return intersect;
+}
+
+Cone::Cone()
+{
+    
+}
+
+Cone::~Cone()
+{
+    
+}
+
+intersection Cone::intersect(const ray &ray)
+{
+    // x^2+z^2-y^2=0
+    // r = o + st
+    // solving quadratic function: x1, x2 = (1/2a)*(-b(+/-)4*a*c)
+    intersection result(ray, 0);
+	double a = ray.dir.x * ray.dir.x + ray.dir.z * ray.dir.z - ray.dir.y * ray.dir.y;
+	double b = 2 * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z - ray.origin.y * ray.dir.y);
+	double c = ray.origin.x * ray.origin.x + ray.origin.z * ray.origin.z - ray.origin.y * ray.origin.y;
+	
+	double roots[2];
+	size_t num_roots = quadraticRoots(a, b, c, roots);
+	
+	if (num_roots == 0) {
+		result.hit = false;
+		
+	} else if (num_roots == 1) {
+		double t = roots[0];
+		double y = ray.origin.y + ray.dir.y * t;
+		if (y <= 1 && y >= 0) {
+			result.t = roots[0];
+			result.hit = true;
+			
+			// cross x&z to get the normal of the tangent surface
+			glm::dvec4 hitpoint = ray.origin + ray.dir * t;
+			double x2_z2_sqrt = sqrt( hitpoint.x * hitpoint.x + hitpoint.z * hitpoint.z );
+			glm::dvec3 p_x {1.0, hitpoint.x / x2_z2_sqrt, 0.0};
+			glm::dvec3 p_z {0.0, hitpoint.z / x2_z2_sqrt, 1.0};
+			glm::dvec3 normal = glm::cross(p_x, p_z);
+			result.normal = glm::dvec4(glm::normalize(normal), 0);
+			result.primitive_int_point = hitpoint;
+		} else {
+			result.hit = false;
+		}
+	// 2 roots, light ray passes through the polygon
+	} else if (num_roots == 2) {
+		double t1 = roots[0];
+		double t2 = roots[1];
+		
+		glm::dvec4 p1 = ray.origin + ray.dir * t1;
+		glm::dvec4 p2 = ray.origin + ray.dir * t2;
+		
+		if (t1 > t2) {
+			// p2 will be the close hit point
+			std::swap(t1, t2);
+			std::swap(p1, p2);
+		}
+		
+		if (p1.y < 0) {
+			if (p2.y < 0) {
+				// Missed
+				result.hit = false;
+			} else {
+				// if p2.y is above 0, we need to see if p2 is a valid hitpoint or not.
+				if (p2.y <= 1 && p2.y >= 0) {
+					if (t2 > 0) {
+						result.hit = true;
+						result.t = t2;
+						
+						glm::dvec4 hitpoint = ray.origin + ray.dir * t2;
+						double x2_z2_sqrt = sqrt( hitpoint.x * hitpoint.x + hitpoint.z * hitpoint.z );
+						glm::dvec3 p_x {1.0, hitpoint.x / x2_z2_sqrt, 0.0};
+						glm::dvec3 p_z {0.0, hitpoint.z / x2_z2_sqrt, 1.0};
+						glm::dvec3 normal = glm::cross(p_x, p_z);
+						result.normal = glm::dvec4(glm::normalize(normal), 0);
+                        result.primitive_int_point = ray.origin + ray.dir * result.t;
+					} else {
+						result.hit = false;
+					}
+				} else {
+					result.hit = false;
+				}
+				
+			}
+			
+		} else if (p1.y >= 0 && p1.y <= 1) {
+			// Hit the cone.
+			if (t1 <= 0) {
+				result.hit = false;
+			} else {
+				result.hit = true;
+				result.t = t1;
+				
+				auto hitpoint = ray.origin + ray.dir * t1;
+				double x2_z2_sqrt = sqrt( hitpoint.x * hitpoint.x + hitpoint.z * hitpoint.z );
+				glm::dvec3 p_x {1.0, hitpoint.x / x2_z2_sqrt, 0.0};
+				glm::dvec3 p_z {0.0, hitpoint.z / x2_z2_sqrt, 1.0};
+				glm::dvec3 normal = glm::cross(p_x, p_z);
+				result.normal = glm::dvec4(glm::normalize(normal), 0);
+                result.primitive_int_point = hitpoint;
+			}
+			
+		} else if (p1.y > 1) {
+			if (p2.y > 1) {
+				result.hit = false;
+			} else {
+				if (p2.y <= 1 && p2.y >= 0) {
+					if (t2 > 0) {
+						// Hit the top cap
+						double th = ( 1 - ray.origin.y ) / ray.dir.y;
+						auto hitpoint = ray.origin + ray.dir * th;
+						
+						if (th >= 0 && (hitpoint.x <= 1 && hitpoint.x >= -1) && (hitpoint.z <= 1 && hitpoint.z >= -1)) {
+							result.hit = true;
+							result.t = th;
+							result.normal = glm::dvec4(0, 1, 0, 0);
+                            result.primitive_int_point = hitpoint;
+						} else {
+							result.hit = false;
+						}
+						
+					} else {
+						result.hit = false;
+					}
+					
+				} else {
+					result.hit = false;
+				}
+				
+			}
+		}	
+	}
+    if (result.hit) {
+        double x = result.received_ray.origin.x;
+        double z = result.received_ray.origin.z;
+        double y = result.received_ray.origin.y;
+        if (x * x + z * z <= y * y ) {
+            result.normal = -result.normal;
+        }
+    }
+    return result;
+}
+
+Cylinder::Cylinder()
+{
+	
+}
+
+Cylinder::~Cylinder()
+{
+	
+}
+
+
+intersection Cylinder::intersect(const ray &ray)
+{
+    intersection result(ray, 0);
+    double a = ray.dir.x * ray.dir.x + ray.dir.z * ray.dir.z;
+    double b = 2 * ray.origin.x * ray.dir.x + 2 * ray.origin.z * ray.dir.z;
+    double c = ray.origin.x * ray.origin.x + ray.origin.z * ray.origin.z - 1;
+    
+    double roots[2];
+    size_t num_roots = quadraticRoots(a, b, c, roots);
+
+    if (num_roots == 0) {
+        // no root
+        result.hit = false;
+        
+    } else if (num_roots == 1) {
+        double t = roots[0];
+        double y = ray.origin.y + ray.dir.y * t;
+        if (y <= 1 && y >= -1) {
+            result.t = roots[0];
+            result.hit = true;
+			
+			auto hitpoint = ray.origin + ray.dir * t;
+			result.normal = glm::normalize(glm::dvec4(hitpoint.x, 0, hitpoint.z, 0));
+            result.primitive_int_point = hitpoint;
+        } else {
+            result.hit = false;
+        }
+        
+    } else if (num_roots == 2) {
+        double t1 = roots[0];
+        double t2 = roots[1];
+        
+        double y1 = ray.origin.y + ray.dir.y * t1;
+        double y2 = ray.origin.y + ray.dir.y * t2;
+        
+        if (t1 > t2) {
+            std::swap(t1, t2);
+            std::swap(y1, y2);
+        }
+		
+		if (y1 < -1) {
+			
+			if (y2 < -1) {
+				result.hit = false;
+			} else {
+				float th = t1 + (t2 - t1) * (y1 + 1) / (y1 - y2);
+				if (th <= 0)
+					result.hit = false;
+				else
+					result.hit = true;
+				result.t = th;
+				result.normal = glm::dvec4(0, -1, 0, 0);
+                result.primitive_int_point = ray.origin + ray.dir * (double)th;
+			}
+			
+		} else if (y1 >= -1 && y1 <= 1) {
+			// Hit the cylinder bit.
+			if (t1 <= 0) {
+				result.hit = false;
+			} else {
+				result.hit = true;
+				result.t = t1;
+				
+				auto hitpoint = ray.origin + ray.dir * t1;
+				result.normal = glm::normalize(glm::dvec4(hitpoint.x, 0, hitpoint.z, 0));
+                result.primitive_int_point = hitpoint;
+			}
+			
+		} else if (y1 > 1) {
+			if (y2 > 1) {
+				result.hit = false;
+			} else {
+				// hit the top cap
+				float th = t1 + (t2 - t1) * (y1 - 1) / (y1 - y2);
+				if (th <= 0)
+					result.hit = false;
+				else
+					result.hit = true;
+				
+				result.t = th;
+				result.normal = glm::dvec4(0, 1, 0, 0);
+                result.primitive_int_point = ray.origin + ray.dir * (double)th;
+			}
+		}
+	}
+    
+    if (result.hit) {
+        // inside hit test
+        double x = result.received_ray.origin.x;
+        double z = result.received_ray.origin.z;
+        double y = result.received_ray.origin.y;
+        
+        if (std::abs(y) <= 1 && (x * x + z * z <= 1)) {
+            result.normal = -result.normal;
+        }
+    }
+    
+    return result;
+}
+
+intersection NonhierTorus::intersect(const ray& ray) {
+  //cout << " here " << endl;
+  intersection result(ray, 0);
+  // http://www.emeyex.com/site/projects/raytorus.pdf
+  dvec3 p = (dvec3)ray.origin - m_pos;
+  dvec3 d = (dvec3)ray.dir;
+
+  double R2 = m_oradius*m_oradius;
+  double r2 = m_iradius*m_iradius;
+  double a = glm::dot(d,d);
+  double b = 2 * glm::dot(p,d);
+  double y = glm::dot(p,p) - r2 - R2;
+
+  double _A = 1.0 / (a*a);
+  double B = 2*a*b;
+  double C = (b*b) + 2*a*y + 4*R2*(d[2]*d[2]);
+  double D = 2*b*y + 8*R2*p[2]*d[2];
+  double E = (y*y) + 4*R2*(p[2]*p[2]) - 4*R2*r2;
+
+  double roots[4];
+
+  // solving for t
+  size_t num_roots = quarticRoots(B * _A, C * _A, D * _A, E * _A, roots);
+
+  // If there are no roots, then no intersection
+  if(num_roots == 0) {
+      result.hit = false;
+      return result;
+  }
+
+  double t = std::numeric_limits<double>::infinity(); 
+  for(size_t i = 0; i < num_roots; i++)
+  {
+    t = (roots[i] > 0 && roots[i] < t) ? roots[i] : t;
+  }
+
+  if(std::isinf(t)) {
+      result.hit = false;
+      return result;
+  }
+
+  // To find the surface normal, we take the partial derivative of the implicit formula of the torus
+  // with respect to each of the coordinates and then plug in the coordinate values from the intersection point
+  dvec4 Q = ray.origin + t*ray.dir;
+  double qx2 = Q[0]*Q[0];
+  double qy2 = Q[1]*Q[1];
+  double qz2 = Q[2]*Q[2];
+  double nx = 4*Q[0]*(qx2 + qy2 + qz2 - r2 - R2);
+  double ny = 4*Q[1]*(qx2 + qy2 + qz2 - r2 - R2);
+  double nz = 4*Q[2]*(qz2 + qy2 + qz2 - r2 - R2) + 8*R2*Q[2];
+
+//   double theta = asin((Q[2]-m_pos[2]) / m_iradius);
+//   double phi = asin((Q[1]-m_pos[1]) / (m_oradius + m_iradius*cos(theta)));
+
+//   j.u = 0.5 + phi / M_PI;
+//   j.v = 0.5 + theta / M_PI;
+  result.hit = true;
+  result.t = t;
+  result.normal = dvec4(nx, ny, nz, 0);
+  result.primitive_int_point = Q;
+  //cout << Q << endl;
+  return result;
+  
+}
+
+NonhierTorus::~NonhierTorus() {}
+
+Torus::Torus() {
+    m_primitive = new NonhierTorus({0,0,0},1.0,0.1);
+}
+
+Torus::~Torus()
+{
+    delete m_primitive;
+}
+
+intersection Torus::intersect(const ray& ray)  {
+    //cout << "here" << endl;
+  intersection result =  m_primitive->intersect(ray);
+  return result;
 }

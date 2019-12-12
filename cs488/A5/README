@@ -1,0 +1,77 @@
+CS488 - Fall 2019 Assignment 5 - Final Project
+Tianjun Zhang, 20643273, t269zhan@uwaterloo.ca
+
+Compilation:
+	- no changes to the default premake/make commands
+	- tested on lab computer gl29
+
+(Project Report is in this same directory)
+
+Manual:
+	[!] The app starts in single thread mode by default. Compared to multithreading the efficiency is inferior. To enable multi-threading, un-comment "#define MULTI on top if A4.cpp"
+
+	[!] If the program terminates immediately under multithreading (using multiple logical cores) and doesn't produce a image, comment out "#define MULTI" on top of A4.cpp to restore the single threading style running. This happened to me in the graphics lab.
+
+	[!] Most of the features can be turned on/off by changing the #define in A4.cpp. As a result, a recompile would be necessary
+
+	[!] Most of the scripts produces 512x512 images, some scripts will have rendered 1024x1024 images provided along side them
+
+	--------------------------------------------------------------------------------------------------------------
+	Scripts to Run
+	--------------------------------------------------------------------------------------------------------------
+
+	- Reflection & Refraction are always ON, no recompile needed, after making the program, run "./A4 project/room_reflection.lua" or "./A4 project/room_refraction.lua" to produce the image
+
+	- CUSTOM PRIMITIVES:
+		Run "./A4" on "/project/room_prims.lua" to see a sample of the custom primitives
+
+	- Reflection demo:
+		"./A4 /project/room_reflection.lua"
+
+	- Refraction demo:
+		"./A4 project/room_refraction.lua"
+
+	- Texture Maps:
+		"./A4 project/room_textures.lua", also in a number of other scenes including the final scene
+
+	- Glossy Reflection:
+		"./A4 project/room_glossy.lua" for a demo of glossiness 10
+
+	- DOF
+		"./A4 project/room_dof.lua" for a demo of DOF (2 spheres placed apart from each other)
+		* ANTIALIASING has to be on in A4.app
+		* AA_Mode has to be set to 2
+		* foco_mode can be changed to achieve different effects
+
+	- Soft shadow
+		"./A4 project/room_soft_shadow.lua" for a demo of soft shadow casted by a sphere
+		* SS_RAYCOUNT in A4.cpp has to be a reasonable value (50, 40, ...)
+
+	- Final scene 
+		can be rendered with "./A4 project/scene.lua" which whill produce a 512x512 image
+		* An image with every feature enabled couldn't be generated in time due to limitations of machines and code optmization. Instead there are a few different final scnene renders with different features enabled.
+
+	[!] The rendering speed will be significantly slowed if more than 1 of Soft shadow, DOF and Glossy reflection are turned on
+    
+    --------------------------------------------------------------------------------------------------------------
+    Some detail of the #define toggles
+    --------------------------------------------------------------------------------------------------------------
+
+	- #define ANTIALIASING: 
+		Anti-aliasing is completely turned off if this line is commented out. Depth of field feature require this option to be turned on as well.
+
+	- #define AA_Mode:
+		Only works if ANTIALIASING is on.
+		AA_Mode 0: An altered version of the supersampling AA algorithm in A4, sampling 64 random points. Slow.
+		AA_Mode 1: The same sampling method from A4, cheap and efficient.
+		AA_Mode 2: *BAD NAMING* Setting AA_Mode to 2 turns on [depth of field]
+
+	- #define focu_range (DOF)
+		decides the focus range of Depth of field blurs, when its over 4 the closer objects start to blur, vice versa
+
+	- #define SS_RAYCOUNT (Soft shadow):
+		The amount of rays used to create soft shadows. Must be set to a reasonable(>0) value for soft shadow to work. Setting SS_RAYCOUNT to 50 typically takes around 1000 seconds on my machine (dual core i5) to produce a 512x512 image with simple polygons. Tuning down the value (30, 20, ...) or lowering the resolution in the lua file makes it faster.
+
+	- #define GLOSSY_RAYCOUNT (Glossy Reflection):
+		The amount of rays used to create glossy reflection. ust be set to a reasonable(>0) value for soft shadow to work. Setting SS_RAYCOUNT to 50 typically takes around 1000 seconds on my machine (dual core i5) to produce a 512x512 image. Tuning down the value (30, 20, ...) or lowering the resolution in the lua file makes it faster.
+

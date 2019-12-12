@@ -9,6 +9,7 @@ using namespace std;
 #include "PhongMaterial.hpp"
 #include "ray.hpp"
 #include "Texture.hpp"
+//#include "Primitive.hpp"
 using namespace glm;
 
 class SceneNode; // to compile
@@ -40,7 +41,11 @@ public:
     intersection(const ray &ray, double pt, bool hit); // knowing hit/miss
     intersection(const ray &ray, double t);
     Texture *textureInfo() const;
+    Bumpmap *bumpmapInfo() const;
 
     dvec4 primitive_int_point;
+    int int_prim_type = -1;
+    dvec3 spos = {0,0,0};
+    double sradius = 0;
     
 };

@@ -18,7 +18,8 @@ public:
 	Material* m_material;
 	Primitive* m_primitive;
 	Texture* m_texture;
-
+	Bumpmap* m_bumpmap = nullptr;
+	
 	virtual intersection intersect(const ray &ray);
 
 	virtual intersection intersect(const ray &ray, std::list<glm::mat4> trans);

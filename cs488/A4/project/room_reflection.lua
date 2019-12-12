@@ -77,6 +77,6 @@ white_light = gr.light({0, 8, 10}, {0.8, 0.8, 0.8}, {1, 0, 0})
 green_white_light = gr.light({0.0, 0.0, 400.0}, {0.5, 0.5, 0.5}, {1, 0, 0})
 l2 = gr.light({0, 10, -20}, {0.4, 0.4, 0.8}, {1, 0, 0})
 
-gr.render(scene, 'room_reflection.png', 1024, 1024,
+gr.render(scene, 'room_reflection.png', 512, 512,
 	  {0, 0, 30}, {0, 0, -1}, {0, 1, 0}, 50,
 	  {0.4, 0.4, 0.4}, {white_light})
